@@ -3,6 +3,8 @@ PLAN: "feat: supply_manager v0.1.0 — the clinic supplies: items, batches with 
 TAG: v0.1.0
 EXECUTOR: jules
 REVIEWER: none
+STATUS: running
+SESSION: 11293930010196048715
 ---
 
 > Read AGENTS.md at the repo root before any change.
