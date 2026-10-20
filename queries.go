@@ -120,3 +120,66 @@ func (m *Module) ListMovements(a ListMovementsArgs) ([]SupplyMovement, error) {
 func (m *Module) GetBatch(tenantId, id string) (SupplyBatch, error) {
 	return getBatch(m.db, tenantId, id)
 }
+
+// ListItems returns the items of a tenant, by name. active_only hides the deactivated ones; limit 0 = no limit.
+func (m *Module) ListItems(a ListItemsArgs) ([]SupplyItem, error) {
+	var proxy SupplyItem
+	qb := m.db.Query(&proxy).Where(SupplyItem_.TenantId).Eq(a.TenantId)
+	if a.ActiveOnly {
+		qb = qb.Where(SupplyItem_.IsActive).Eq(true)
+	}
+	list, err := ReadAllSupplyItem(qb)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]SupplyItem, len(list))
+	for i, p := range list {
+		out[i] = *p
+	}
+	slices.SortFunc(out, func(x, y SupplyItem) int { return compareText(x.Name, y.Name) })
+	return page(out, int(a.Offset), int(a.Limit)), nil
+}
+
+// ListLocations returns the locations of a tenant, by name.
+func (m *Module) ListLocations(a ListLocationsArgs) ([]SupplyLocation, error) {
+	var proxy SupplyLocation
+	qb := m.db.Query(&proxy).Where(SupplyLocation_.TenantId).Eq(a.TenantId)
+	if a.ActiveOnly {
+		qb = qb.Where(SupplyLocation_.IsActive).Eq(true)
+	}
+	list, err := ReadAllSupplyLocation(qb)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]SupplyLocation, len(list))
+	for i, l := range list {
+		out[i] = *l
+	}
+	slices.SortFunc(out, func(x, y SupplyLocation) int { return compareText(x.Name, y.Name) })
+	return out, nil
+}
+
+// compareText orders two strings by byte order.
+func compareText(a, b string) int {
+	switch {
+	case a < b:
+		return -1
+	case a > b:
+		return 1
+	}
+	return 0
+}
+
+// page returns the slice from offset, at most limit long; limit 0 = to the end.
+func page[T any](list []T, offset, limit int) []T {
+	if offset > 0 {
+		if offset >= len(list) {
+			return nil
+		}
+		list = list[offset:]
+	}
+	if limit > 0 && len(list) > limit {
+		list = list[:limit]
+	}
+	return list
+}
