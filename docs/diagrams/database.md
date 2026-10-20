@@ -21,6 +21,7 @@ erDiagram
         text id PK
         text tenant_id
         text name
+        text room_id
         bool is_active
         int updated_at
     }

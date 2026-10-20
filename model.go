@@ -42,6 +42,9 @@ var SupplyLocationModel = model.Definition{
 		{Name: "id", Type: model.Text(), DB: &model.FieldDB{PK: true}, OmitEmpty: true},
 		{Name: "tenant_id", Type: model.Text(), NotNull: true},
 		{Name: "name", Type: input.Text(), Label: "Name", NotNull: true, Permitted: model.Permitted{Letters: true, Numbers: true, Spaces: true, Tilde: true, Minimum: 1, Maximum: 100}},
+		// room_id is the room (box) this location supplies, a soft reference to room_layout; "" = none. At most one active
+		// location per room. No widget yet: the room picker comes with the stock screens.
+		{Name: "room_id", Type: model.Text(), OmitEmpty: true},
 		{Name: "is_active", Type: input.Checkbox(), Label: "Active"},
 		{Name: "updated_at", Type: model.Int(), OmitEmpty: true},
 	},

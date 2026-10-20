@@ -69,6 +69,11 @@ Every operation is called `supply.<name>` and declares its RBAC resource and act
 the tenant and is active) and `ItemCard`, what another module snapshots about an item; an absent or foreign item is
 `ErrNotFound`. A module that needs them declares the method in a narrow interface of its own.
 
+`UseInRoom(tenantId, roomId, itemId string, quantity float64, docType, docId, by string) (cost int64, err error)` takes a
+consumption (`stock.InternalUse`, first expiry first out) out of the active location that supplies the room (box) `roomId`,
+records the document that caused it and returns its cost in whole pesos. `clinical_encounter` uses it when an attention is
+marked done; the room comes from `room_layout`. No location for the room is `ErrNoLocationForRoom`.
+
 ## Cost facts
 
 If `Deps.MoneyScope` is set and a batch has a unit cost, each output movement publishes one `money.Consumed` fact (cost × quantity, rounded half away from zero). A purchase is never a fact of this module.

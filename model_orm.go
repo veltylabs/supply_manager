@@ -126,6 +126,7 @@ type SupplyLocation struct {
 	Id        string
 	TenantId  string
 	Name      string
+	RoomId    string
 	IsActive  bool
 	UpdatedAt int64
 }
@@ -135,7 +136,7 @@ func (m *SupplyLocation) ModelName() string { return "supply_location" }
 func (m *SupplyLocation) Schema() []model.Field { return SupplyLocationModel.Fields }
 
 func (m *SupplyLocation) Pointers() []any {
-	return []any{&m.Id, &m.TenantId, &m.Name, &m.IsActive, &m.UpdatedAt}
+	return []any{&m.Id, &m.TenantId, &m.Name, &m.RoomId, &m.IsActive, &m.UpdatedAt}
 }
 
 func (m *SupplyLocation) IsNil() bool { return m == nil }
@@ -146,6 +147,9 @@ func (m *SupplyLocation) EncodeFields(w model.FieldWriter) {
 	}
 	w.String("tenant_id", m.TenantId)
 	w.String("name", m.Name)
+	if m.RoomId != "" {
+		w.String("room_id", m.RoomId)
+	}
 	w.Bool("is_active", m.IsActive)
 	if m.UpdatedAt != 0 {
 		w.Int("updated_at", m.UpdatedAt)
@@ -161,6 +165,9 @@ func (m *SupplyLocation) DecodeFields(r model.FieldReader) {
 	}
 	if v, ok := r.String("name"); ok {
 		m.Name = v
+	}
+	if v, ok := r.String("room_id"); ok {
+		m.RoomId = v
 	}
 	if v, ok := r.Bool("is_active"); ok {
 		m.IsActive = v
@@ -191,12 +198,14 @@ var SupplyLocation_ = struct {
 	Id        string
 	TenantId  string
 	Name      string
+	RoomId    string
 	IsActive  string
 	UpdatedAt string
 }{
 	Id:        "id",
 	TenantId:  "tenant_id",
 	Name:      "name",
+	RoomId:    "room_id",
 	IsActive:  "is_active",
 	UpdatedAt: "updated_at",
 }

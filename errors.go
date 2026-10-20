@@ -19,6 +19,7 @@ const (
 
 	// 409
 	ErrSkuExists           domainError = "supply: an item with this SKU already exists"
+	ErrRoomTaken           domainError = "supply: another location already supplies this room"
 	ErrLocationNameExists  domainError = "supply: a location with this name already exists"
 	ErrBatchExists         domainError = "supply: this batch number already exists for the item"
 	ErrConflict            domainError = "supply: concurrent update, retry"
@@ -26,6 +27,7 @@ const (
 	ErrBatchCostMismatch   domainError = "supply: the batch exists with a different unit cost"
 
 	// 400
+	ErrNoLocationForRoom domainError = "supply: no active location supplies this room"
 	ErrInsufficientStock domainError = "supply: not enough stock"
 	ErrBatchExpired      domainError = "supply: the batch is expired"
 	ErrUnit              domainError = "supply: unknown unit"
@@ -71,7 +73,7 @@ func statusOf(err error) int {
 		switch e {
 		case ErrNotFound, ErrItemNotFound, ErrLocationNotFound, ErrBatchNotFound:
 			return 404
-		case ErrSkuExists, ErrLocationNameExists, ErrBatchExists, ErrConflict, ErrBatchExpiryMismatch, ErrBatchCostMismatch:
+		case ErrSkuExists, ErrLocationNameExists, ErrRoomTaken, ErrBatchExists, ErrConflict, ErrBatchExpiryMismatch, ErrBatchCostMismatch:
 			return 409
 		default:
 			return 400

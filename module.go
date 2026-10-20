@@ -123,6 +123,9 @@ func (m *Module) CreateLocation(l SupplyLocation) (SupplyLocation, error) {
 	} else if !orm.IsNotFound(err) {
 		return SupplyLocation{}, err
 	}
+	if err := m.checkRoomFree(l); err != nil {
+		return SupplyLocation{}, err
+	}
 	if err := m.db.Create(&l); err != nil {
 		return SupplyLocation{}, err
 	}
@@ -594,3 +597,69 @@ const nanosPerSecond = 1000000000
 
 // nowSeconds is the current time in the unit of an expiry date. Compare an expiry only with this, never with time.Now().
 func nowSeconds() int64 { return time.Now() / nanosPerSecond }
+
+// checkRoomFree: an active location that names a room must be the only active one of its tenant that names it.
+func (m *Module) checkRoomFree(l SupplyLocation) error {
+	if l.RoomId == "" || !l.IsActive {
+		return nil
+	}
+	_, found, err := m.locationOfRoom(l.TenantId, l.RoomId, l.Id)
+	if err != nil {
+		return err
+	}
+	if found {
+		return ErrRoomTaken
+	}
+	return nil
+}
+
+// locationOfRoom returns the active location of the tenant that supplies roomId, skipping the location exceptId.
+func (m *Module) locationOfRoom(tenantId, roomId, exceptId string) (SupplyLocation, bool, error) {
+	var proxy SupplyLocation
+	qb := m.db.Query(&proxy).Where(SupplyLocation_.TenantId).Eq(tenantId).Where(SupplyLocation_.RoomId).Eq(roomId)
+	list, err := ReadAllSupplyLocation(qb)
+	if err != nil {
+		return SupplyLocation{}, false, err
+	}
+	for _, l := range list {
+		if l.IsActive && l.Id != exceptId {
+			return *l, true, nil
+		}
+	}
+	return SupplyLocation{}, false, nil
+}
+
+// UseInRoom takes quantity of an item out of the location that supplies roomId, as a consumption (stock.InternalUse)
+// caused by the document (docType, docId) — an attention, for clinical_encounter — by first expiry first out, exactly
+// like RegisterOutput. It returns the cost of what was taken in whole pesos (each batch's unit cost × its quantity,
+// rounded half away from zero; 0 when the batches have no cost). Its arguments are plain types so that another module can
+// declare it in a narrow interface of its own without importing this one.
+//
+// Errors: ErrNoLocationForRoom (no active location supplies the room) and every error of RegisterOutput
+// (ErrInsufficientStock, ErrItemNotFound, …). If the cost fact cannot be published after the commit, the cost is returned
+// WITH the error: the stock change is already saved.
+func (m *Module) UseInRoom(tenantId, roomId, itemId string, quantity float64, docType, docId, by string) (int64, error) {
+	loc, found, err := m.locationOfRoom(tenantId, roomId, "")
+	if err != nil {
+		return 0, err
+	}
+	if !found {
+		return 0, ErrNoLocationForRoom
+	}
+	movements, outErr := m.RegisterOutput(RegisterOutputArgs{
+		TenantId: tenantId, ItemId: itemId, LocationId: loc.Id, Quantity: quantity, MovementType: string(stock.InternalUse),
+		SourceDocumentType: docType, SourceDocumentId: docId, CreatedBy: by,
+	})
+	if len(movements) == 0 {
+		return 0, outErr
+	}
+	var cost int64
+	for _, mv := range movements {
+		batch, err := m.GetBatch(tenantId, mv.BatchId)
+		if err != nil {
+			return cost, err
+		}
+		cost += int64(float64(batch.UnitCost)*mv.Quantity + 0.5) // half away from zero; both factors are positive
+	}
+	return cost, outErr
+}

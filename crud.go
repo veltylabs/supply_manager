@@ -156,6 +156,9 @@ func (m *Module) UpdateLocation(l SupplyLocation) (SupplyLocation, error) {
 			return SupplyLocation{}, err
 		}
 	}
+	if err := m.checkRoomFree(l); err != nil {
+		return SupplyLocation{}, err
+	}
 	if err := m.db.Update(&l, orm.Eq(SupplyLocation_.Id, l.Id), orm.Eq(SupplyLocation_.TenantId, l.TenantId)); err != nil {
 		return SupplyLocation{}, err
 	}
@@ -186,6 +189,8 @@ func (m *Module) PatchLocations(ids, fields []string, rec SupplyLocation) error 
 			switch f {
 			case "name":
 				current.Name = rec.Name
+			case "room_id":
+				current.RoomId = rec.RoomId
 			case "is_active":
 				current.IsActive = rec.IsActive
 			default:

@@ -21,6 +21,10 @@ There is no stock screen in this version.
 - **Time units**: expiry dates are Unix **seconds**; `webtyp.com/time.Now()` returns Unix **nanoseconds**. The module
   compares an expiry only with `nowSeconds()`; `created_at` and `updated_at` keep the nanoseconds of `time.Now()`.
 
+- **Rooms**: a location may name the room (box) it supplies (`room_id`, a soft reference to `room_layout`); at most one
+  active location per room and tenant (`ErrRoomTaken`). `UseInRoom` consumes from that location; the room picker in the
+  location form comes with the stock screens.
+
 ## Dependencies
 
 This module depends on:
