@@ -4,7 +4,6 @@ package seed
 import (
 	supplymanager "github.com/veltylabs/supply_manager"
 	"webtyp.com/fmt"
-	"webtyp.com/stock"
 	"webtyp.com/time"
 )
 
@@ -13,10 +12,8 @@ type Data struct {
 	Locations []supplymanager.SupplyLocation
 	Items     []supplymanager.SupplyItem
 }
-
 const (
-	// nanosPerSecond turns time.Now() (nanoseconds) into the Unix seconds of an expiry date.
-	nanosPerSecond = 1000000000
+
 
 	locStore = "Bodega"
 	locRoom  = "Box 1"
@@ -57,13 +54,13 @@ func Load(m *supplymanager.Module, tenantID string) (Data, error) {
 		cost   int64
 	}{
 		{supplymanager.NoBatchNumber, 0, 0},
-		{"LOT-JER-1", time.Now()/nanosPerSecond + expiryDays*stock.SecondsPerDay, syringeCost},
+		{"LOT-JER-1", int64(time.NowUnix() + time.Unix(expiryDays)*time.Day), syringeCost},
 		{"LOT-GASA-1", 0, 0},
 	}
 	for i, it := range data.Items {
 		if _, err := m.ReceiveStock(supplymanager.ReceiveStockArgs{
 			TenantId: tenantID, ItemId: it.Id, LocationId: data.Locations[0].Id, BatchNumber: receipts[i].batch,
-			ExpirationDate: receipts[i].expiry, UnitCost: receipts[i].cost, Quantity: demoQuantity,
+			ExpirationDate: time.Unix(receipts[i].expiry), UnitCost: receipts[i].cost, Quantity: demoQuantity,
 		}); err != nil {
 			return data, fmt.Err("seed: ReceiveStock", it.Sku, err)
 		}

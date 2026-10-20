@@ -31,7 +31,7 @@ var SupplyItemModel = model.Definition{
 		{Name: "unit", Type: input.Select(), Label: "Unit", NotNull: true},
 		{Name: "min_quantity", Type: input.Decimal(), Label: "Minimum quantity", OmitEmpty: true},
 		{Name: "is_active", Type: input.Checkbox(), Label: "Active"},
-		{Name: "updated_at", Type: model.Int(), OmitEmpty: true},
+		{Name: "updated_at", Type: model.NanoTime(), OmitEmpty: true},
 	},
 }
 
@@ -46,7 +46,7 @@ var SupplyLocationModel = model.Definition{
 		// location per room. No widget yet: the room picker comes with the stock screens.
 		{Name: "room_id", Type: model.Text(), OmitEmpty: true},
 		{Name: "is_active", Type: input.Checkbox(), Label: "Active"},
-		{Name: "updated_at", Type: model.Int(), OmitEmpty: true},
+		{Name: "updated_at", Type: model.NanoTime(), OmitEmpty: true},
 	},
 }
 
@@ -58,10 +58,10 @@ var SupplyBatchModel = model.Definition{
 		{Name: "tenant_id", Type: model.Text(), NotNull: true},
 		{Name: "item_id", Type: model.Text(), Ref: &SupplyItemModel, DB: &model.FieldDB{RefColumn: "id"}, NotNull: true},
 		{Name: "batch_number", Type: model.Text(), NotNull: true},
-		{Name: "expiration_date", Type: model.Int()},
+		{Name: "expiration_date", Type: model.UnixTime()},
 		{Name: "unit_cost", Type: model.Int(), OmitEmpty: true},
 		{Name: "is_active", Type: model.Bool()},
-		{Name: "updated_at", Type: model.Int(), OmitEmpty: true},
+		{Name: "updated_at", Type: model.NanoTime(), OmitEmpty: true},
 	},
 }
 
@@ -76,7 +76,7 @@ var SupplyStockLevelModel = model.Definition{
 		{Name: "batch_id", Type: model.Text(), Ref: &SupplyBatchModel, DB: &model.FieldDB{RefColumn: "id"}, NotNull: true},
 		{Name: "quantity", Type: model.Float()},
 		{Name: "revision", Type: model.Int()},
-		{Name: "updated_at", Type: model.Int(), OmitEmpty: true},
+		{Name: "updated_at", Type: model.NanoTime(), OmitEmpty: true},
 	},
 }
 
@@ -94,7 +94,7 @@ var SupplyMovementModel = model.Definition{
 		{Name: "source_document_type", Type: model.Text(), OmitEmpty: true},
 		{Name: "source_document_id", Type: model.Text(), OmitEmpty: true},
 		{Name: "note", Type: model.Text(), OmitEmpty: true},
-		{Name: "created_at", Type: model.Int()},
+		{Name: "created_at", Type: model.NanoTime()},
 		{Name: "created_by", Type: model.Text(), OmitEmpty: true},
 	},
 }
@@ -143,7 +143,7 @@ var ReceiveStockArgsModel = model.Definition{
 		{Name: "item_id", Type: model.Text()},
 		{Name: "location_id", Type: model.Text()},
 		{Name: "batch_number", Type: model.Text()},
-		{Name: "expiration_date", Type: model.Int()},
+		{Name: "expiration_date", Type: model.UnixTime()},
 		{Name: "unit_cost", Type: model.Int()},
 		{Name: "quantity", Type: model.Float()},
 		{Name: "source_document_type", Type: model.Text()},
@@ -210,8 +210,8 @@ var ListMovementsArgsModel = model.Definition{
 		{Name: "tenant_id", Type: model.Text()},
 		{Name: "item_id", Type: model.Text()},
 		{Name: "batch_id", Type: model.Text()},
-		{Name: "from", Type: model.Int()},
-		{Name: "to", Type: model.Int()},
+		{Name: "from", Type: model.NanoTime()},
+		{Name: "to", Type: model.NanoTime()},
 		{Name: "limit", Type: model.Int()},
 	},
 }
@@ -243,7 +243,7 @@ var ExpiringStockModel = model.Definition{
 		{Name: "batch_number", Type: model.Text()},
 		{Name: "location_id", Type: model.Text()},
 		{Name: "quantity", Type: model.Float()},
-		{Name: "expiration_date", Type: model.Int()},
+		{Name: "expiration_date", Type: model.UnixTime()},
 		{Name: "expired", Type: model.Bool()},
 	},
 }

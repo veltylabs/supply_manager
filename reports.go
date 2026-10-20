@@ -1,6 +1,8 @@
 package supplymanager
 
 import (
+	"webtyp.com/time"
+
 	"slices"
 
 	"webtyp.com/stock"
@@ -12,7 +14,7 @@ func (m *Module) ListExpiring(a ListExpiringArgs) ([]ExpiringStock, error) {
 	if a.WithinDays < 0 {
 		return nil, ErrDays
 	}
-	now := nowSeconds()
+	now := time.NowUnix()
 	levels, err := m.ListStock(ListStockArgs{TenantId: a.TenantId})
 	if err != nil {
 		return nil, err

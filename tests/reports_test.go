@@ -3,18 +3,19 @@ package tests
 import (
 	"testing"
 
+	"webtyp.com/time"
+
 	supplymanager "github.com/veltylabs/supply_manager"
-	"webtyp.com/stock"
 )
 
 func TestListExpiring(t *testing.T) {
 	m := newModule(t)
 	p, loc := newItem(t, m, "p1"), newLocation(t, m, "Store")
-	now := nowSec()
+	now := time.NowUnix()
 	for _, r := range []supplymanager.ReceiveStockArgs{
-		receive(p.Id, loc.Id, "EXPIRED", now-5*stock.SecondsPerDay, 1),
-		receive(p.Id, loc.Id, "SOON", now+10*stock.SecondsPerDay, 1),
-		receive(p.Id, loc.Id, "FAR", now+400*stock.SecondsPerDay, 1),
+		receive(p.Id, loc.Id, "EXPIRED", now-5*time.Day, 1),
+		receive(p.Id, loc.Id, "SOON", now+10*time.Day, 1),
+		receive(p.Id, loc.Id, "FAR", now+400*time.Day, 1),
 	} {
 		if _, err := m.ReceiveStock(r); err != nil {
 			t.Fatal(err)
@@ -36,7 +37,7 @@ func TestListExpiring(t *testing.T) {
 func TestListLowStock(t *testing.T) {
 	m := newModule(t)
 	store, counter := newLocation(t, m, "Store"), newLocation(t, m, "Counter")
-	future := nowSec() + 30*stock.SecondsPerDay
+	future := time.NowUnix() + 30*time.Day
 
 	newItem(t, m, "nomin") // an item without minimum: never low
 	if _, err := m.CreateItem(supplymanager.SupplyItem{

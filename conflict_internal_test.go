@@ -34,7 +34,7 @@ func TestApplyToLevel_StaleRevisionIsAConflict(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := m.ReceiveStock(ReceiveStockArgs{TenantId: tenant, ItemId: p.Id, LocationId: l.Id, BatchNumber: "L1", ExpirationDate: nowSeconds() + 30*stock.SecondsPerDay, Quantity: 10}); err != nil {
+	if _, err := m.ReceiveStock(ReceiveStockArgs{TenantId: tenant, ItemId: p.Id, LocationId: l.Id, BatchNumber: "L1", ExpirationDate: time.NowUnix() + 30*time.Day, Quantity: 10}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -46,14 +46,14 @@ func TestApplyToLevel_StaleRevisionIsAConflict(t *testing.T) {
 	read := level.Revision // what a concurrent writer read
 
 	// somebody else changes the row first: the revision moves on
-	err = m.db.Tx(func(tx *orm.DB) error { return applyToLevel(tx, &level, read, stock.In, 1, time.Now()) })
+	err = m.db.Tx(func(tx *orm.DB) error { return applyToLevel(tx, &level, read, stock.In, 1, time.NowNano()) })
 	if err != nil {
 		t.Fatalf("the first writer must succeed: %v", err)
 	}
 
 	// the second writer still holds the old revision
 	stale := level
-	err = m.db.Tx(func(tx *orm.DB) error { return applyToLevel(tx, &stale, read, stock.In, 1, time.Now()) })
+	err = m.db.Tx(func(tx *orm.DB) error { return applyToLevel(tx, &stale, read, stock.In, 1, time.NowNano()) })
 	if err != ErrConflict {
 		t.Errorf("a stale revision: got %v, want ErrConflict", err)
 	}
