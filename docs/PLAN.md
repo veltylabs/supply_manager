@@ -3,8 +3,10 @@ PLAN: "feat: supply_manager v0.1.0 — tests and documentation of the module; th
 TAG: v0.1.0
 EXECUTOR: jules
 REVIEWER: none
-STATUS: running
+STATUS: review
 SESSION: 2194478051109333923
+PR: https://github.com/veltylabs/supply_manager/pull/1
+REVIEWED_COMMIT: 56b633b51843fc86cfd2237379076d2983ea623c
 ---
 
 > Read AGENTS.md at the repo root before any change.
