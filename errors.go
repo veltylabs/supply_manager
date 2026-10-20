@@ -40,6 +40,7 @@ const (
 	ErrLocationInactive  domainError = "supply: the location is inactive"
 	ErrNoRecords         domainError = "supply: no records to save"
 	ErrNoIds             domainError = "supply: no ids given"
+	ErrUnknownField      domainError = "supply: unknown field in the update"
 	ErrDays              domainError = "supply: the days cannot be negative"
 )
 
