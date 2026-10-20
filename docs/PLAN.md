@@ -3,6 +3,8 @@ PLAN: "feat: supply_manager v0.1.0 — tests and documentation of the module; th
 TAG: v0.1.0
 EXECUTOR: jules
 REVIEWER: none
+STATUS: running
+SESSION: 2194478051109333923
 ---
 
 > Read AGENTS.md at the repo root before any change.
