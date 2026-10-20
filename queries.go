@@ -97,6 +97,7 @@ func (m *Module) ListMovements(a ListMovementsArgs) ([]SupplyMovement, error) {
 		}
 		out = append(out, *mv)
 	}
+	slices.Reverse(out) // the store returns insertion order: reversed, it is the tie-break of entries written in the same second
 	slices.SortStableFunc(out, func(x, y SupplyMovement) int {
 		switch {
 		case x.CreatedAt > y.CreatedAt:
