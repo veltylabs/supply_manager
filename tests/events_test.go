@@ -1,8 +1,9 @@
 package tests
 
 import (
-	"github.com/veltylabs/supply_manager"
 	"testing"
+
+	supplymanager "github.com/veltylabs/supply_manager"
 	"webtyp.com/events"
 	"webtyp.com/events/mock"
 	"webtyp.com/money"

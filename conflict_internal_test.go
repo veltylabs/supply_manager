@@ -34,7 +34,7 @@ func TestApplyToLevel_StaleRevisionIsAConflict(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := m.ReceiveStock(ReceiveStockArgs{TenantId: tenant, ItemId: p.Id, LocationId: l.Id, BatchNumber: "L1", ExpirationDate: time.Now() + 30*stock.SecondsPerDay, Quantity: 10}); err != nil {
+	if _, err := m.ReceiveStock(ReceiveStockArgs{TenantId: tenant, ItemId: p.Id, LocationId: l.Id, BatchNumber: "L1", ExpirationDate: nowSeconds() + 30*stock.SecondsPerDay, Quantity: 10}); err != nil {
 		t.Fatal(err)
 	}
 

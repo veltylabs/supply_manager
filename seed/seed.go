@@ -15,6 +15,9 @@ type Data struct {
 }
 
 const (
+	// nanosPerSecond turns time.Now() (nanoseconds) into the Unix seconds of an expiry date.
+	nanosPerSecond = 1000000000
+
 	locStore = "Bodega"
 	locRoom  = "Box 1"
 
@@ -54,7 +57,7 @@ func Load(m *supplymanager.Module, tenantID string) (Data, error) {
 		cost   int64
 	}{
 		{supplymanager.NoBatchNumber, 0, 0},
-		{"LOT-JER-1", time.Now() + expiryDays*stock.SecondsPerDay, syringeCost},
+		{"LOT-JER-1", time.Now()/nanosPerSecond + expiryDays*stock.SecondsPerDay, syringeCost},
 		{"LOT-GASA-1", 0, 0},
 	}
 	for i, it := range data.Items {

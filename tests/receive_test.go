@@ -5,7 +5,6 @@ import (
 
 	supplymanager "github.com/veltylabs/supply_manager"
 	"webtyp.com/stock"
-	"webtyp.com/time"
 )
 
 // receive builds the arguments of a ReceiveStock for an item and a location; the tests change what they exercise.
@@ -18,7 +17,7 @@ func receive(itemId, locationId, batch string, expiry int64, quantity float64) s
 func TestReceiveStock_AddsUpAndWritesTheLedger(t *testing.T) {
 	m := newModule(t)
 	p, loc := newItem(t, m, "p1"), newLocation(t, m, "Store")
-	future := time.Now() + 30*stock.SecondsPerDay
+	future := nowSec() + 30*stock.SecondsPerDay
 
 	first, err := m.ReceiveStock(receive(p.Id, loc.Id, "L1", future, 10))
 	if err != nil {
@@ -40,7 +39,7 @@ func TestReceiveStock_AddsUpAndWritesTheLedger(t *testing.T) {
 func TestReceiveStock_Rules(t *testing.T) {
 	m := newModule(t)
 	p, loc := newItem(t, m, "p1"), newLocation(t, m, "Store")
-	future := time.Now() + 30*stock.SecondsPerDay
+	future := nowSec() + 30*stock.SecondsPerDay
 
 	cases := []struct {
 		name string

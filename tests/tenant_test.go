@@ -1,8 +1,9 @@
 package tests
 
 import (
-	"github.com/veltylabs/supply_manager"
 	"testing"
+
+	supplymanager "github.com/veltylabs/supply_manager"
 )
 
 func TestTenantIsolation(t *testing.T) {

@@ -7,6 +7,7 @@ import (
 	"webtyp.com/fmt"
 	"webtyp.com/orm"
 	"webtyp.com/storage/mem"
+	"webtyp.com/time"
 )
 
 const testTenant = "tenant-1"
@@ -51,3 +52,6 @@ func newLocation(t *testing.T, m *supplymanager.Module, name string) supplymanag
 	}
 	return l
 }
+
+// nowSec is the current time in Unix seconds, the unit of every expiry date: webtyp.com/time.Now() counts nanoseconds.
+func nowSec() int64 { return time.Now() / 1000000000 }

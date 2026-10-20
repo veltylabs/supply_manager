@@ -11,12 +11,14 @@ Supplies are not sold and have no price, and what is used in a consultation is r
 package main
 
 import (
+	supplymanager "github.com/veltylabs/supply_manager"
+	"webtyp.com/events"
+	"webtyp.com/model"
 	"webtyp.com/orm"
-	"github.com/veltylabs/supply_manager"
 	"webtyp.com/stock"
 )
 
-func example(db *orm.DB, ids supplymanager.IDGenerator, broker events.Publisher) {
+func example(db *orm.DB, ids model.IDGenerator, broker events.Publisher) {
 	// Build the module
 	m, err := supplymanager.New(db, supplymanager.Deps{IDs: ids, Publisher: broker, MoneyScope: "supply"})
 
@@ -24,10 +26,10 @@ func example(db *orm.DB, ids supplymanager.IDGenerator, broker events.Publisher)
 	loc, _ := m.CreateLocation(supplymanager.SupplyLocation{TenantId: "t1", Name: "Store", IsActive: true})
 
 	// Create an item
-	item, _ := m.CreateItem(supplymanager.SupplyItem{TenantId: "t1", Sku: "123", Name: "Gloves", Unit: "BOX", IsActive: true})
+	item, _ := m.CreateItem(supplymanager.SupplyItem{TenantId: "t1", Sku: "123", Name: "Gloves", Unit: supplymanager.UnitBox, IsActive: true})
 
 	// Receive stock
-	m.ReceiveStock(supplymanager.ReceiveStockArgs{TenantId: "t1", ItemId: item.Id, LocationId: loc.Id, BatchNumber: "B1", Quantity: 10})
+	m.ReceiveStock(supplymanager.ReceiveStockArgs{TenantId: "t1", ItemId: item.Id, LocationId: loc.Id, BatchNumber: supplymanager.NoBatchNumber, Quantity: 10}) // no lot, no expiry
 
 	// Register an output
 	m.RegisterOutput(supplymanager.RegisterOutputArgs{TenantId: "t1", ItemId: item.Id, LocationId: loc.Id, Quantity: 2, MovementType: string(stock.InternalUse)})
@@ -36,34 +38,36 @@ func example(db *orm.DB, ids supplymanager.IDGenerator, broker events.Publisher)
 
 ## Operations
 
-| Op | Resource | Action |
-|---|---|---|
-| `OpListItems` | `supply_item` | `read` |
-| `OpGetItem` | `supply_item` | `read` |
-| `OpCreateItem` | `supply_item` | `write` |
-| `OpUpdateItem` | `supply_item` | `write` |
-| `OpUpsertItem` | `supply_item` | `write` |
-| `OpPatchItems` | `supply_item` | `write` |
-| `OpDeactivateItem` | `supply_item` | `write` |
-| `OpDeleteItems` | `supply_item` | `write` |
-| `OpListLocations` | `supply_location` | `read` |
-| `OpGetLocation` | `supply_location` | `read` |
-| `OpCreateLocation` | `supply_location` | `write` |
-| `OpUpdateLocation` | `supply_location` | `write` |
-| `OpUpsertLocation` | `supply_location` | `write` |
-| `OpDeleteLocations` | `supply_location` | `write` |
-| `OpListStock` | `supply_stock_level` | `read` |
-| `OpListBatches` | `supply_batch` | `read` |
-| `OpListMovements` | `supply_movement` | `read` |
-| `OpReceiveStock` | `supply_stock_level` | `write` |
-| `OpTransferStock` | `supply_stock_level` | `write` |
-| `OpRegisterEntry` | `supply_stock_level` | `write` |
-| `OpRegisterOutput` | `supply_stock_level` | `write` |
+Every operation is called `supply.<name>` and declares its RBAC resource and action in `MountOperations`.
+
+| Operation | Constant | Resource | Action |
+|---|---|---|---|
+| `list_items` | `OpListItems` | `supply_item` | read |
+| `get_item` | `OpGetItem` | `supply_item` | read |
+| `create_item` | `OpCreateItem` | `supply_item` | create |
+| `update_item` | `OpUpdateItem` | `supply_item` | update |
+| `upsert_item` | `OpUpsertItem` | `supply_item` | create + update |
+| `deactivate_item` | `OpDeactivateItem` | `supply_item` | update |
+| `delete_item` | `OpDeleteItem` | `supply_item` | delete |
+| `list_locations` | `OpListLocations` | `supply_location` | read |
+| `upsert_location` | `OpUpsertLocation` | `supply_location` | create + update |
+| `update_location` | `OpUpdateLocation` | `supply_location` | update |
+| `delete_location` | `OpDeleteLocation` | `supply_location` | delete |
+| `list_batches` | `OpListBatches` | `supply_batch` | read |
+| `receive_stock` | `OpReceiveStock` | `supply_movement` | create |
+| `register_entry` | `OpRegisterEntry` | `supply_movement` | create |
+| `register_output` | `OpRegisterOutput` | `supply_movement` | create |
+| `transfer_stock` | `OpTransferStock` | `supply_movement` | create |
+| `list_stock` | `OpListStock` | `supply_stock_level` | read |
+| `list_movements` | `OpListMovements` | `supply_movement` | read |
+| `list_expiring` | `OpListExpiring` | `supply_stock_level` | read |
+| `list_low_stock` | `OpListLowStock` | `supply_stock_level` | read |
 
 ## Readers
 
-- `ListExpiring`
-- `ListLowStock`
+`ListExpiring` and `ListLowStock` are reports. For other modules: `ItemExists(tenantId, itemId) (bool, error)` (exists in
+the tenant and is active) and `ItemCard`, what another module snapshots about an item; an absent or foreign item is
+`ErrNotFound`. A module that needs them declares the method in a narrow interface of its own.
 
 ## Cost facts
 
