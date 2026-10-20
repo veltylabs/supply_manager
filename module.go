@@ -50,7 +50,7 @@ func (m *Module) CreateItem(p SupplyItem) (SupplyItem, error) {
 	if p.Id == "" {
 		p.Id = m.ids.NewID()
 	}
-	p.UpdatedAt = time.Now()
+	p.UpdatedAt = time.NowNano()
 	if err := checkItem(&p); err != nil {
 		return SupplyItem{}, err
 	}
@@ -112,7 +112,7 @@ func (m *Module) CreateLocation(l SupplyLocation) (SupplyLocation, error) {
 	if l.Id == "" {
 		l.Id = m.ids.NewID()
 	}
-	l.UpdatedAt = time.Now()
+	l.UpdatedAt = time.NowNano()
 	if err := l.Validate(model.ActionCreate); err != nil {
 		return SupplyLocation{}, ValidationError{Err: err}
 	}
@@ -192,7 +192,7 @@ func levelAt(db *orm.DB, tenantId, locationId, batchId string) (SupplyStockLevel
 }
 
 // levelOrCreate returns the level row of a batch in a location, creating it at quantity 0 and revision 0.
-func (m *Module) levelOrCreate(tx *orm.DB, tenantId, locationId, batchId string, now int64) (SupplyStockLevel, error) {
+func (m *Module) levelOrCreate(tx *orm.DB, tenantId, locationId, batchId string, now time.Nano) (SupplyStockLevel, error) {
 	level, found, err := levelAt(tx, tenantId, locationId, batchId)
 	if err != nil {
 		return SupplyStockLevel{}, err
@@ -210,7 +210,7 @@ func (m *Module) levelOrCreate(tx *orm.DB, tenantId, locationId, batchId string,
 // applyToLevel changes the quantity of a stock level by `quantity` in direction d, guarded by the revision the caller
 // read: if the row changed since (expectedRevision differs from the stored one) it is ErrConflict and nothing is
 // written. stock.Apply keeps the quantity from going negative (ErrInsufficientStock).
-func applyToLevel(tx *orm.DB, level *SupplyStockLevel, expectedRevision int64, d stock.Direction, quantity float64, now int64) error {
+func applyToLevel(tx *orm.DB, level *SupplyStockLevel, expectedRevision int64, d stock.Direction, quantity float64, now time.Nano) error {
 	var current SupplyStockLevel
 	qb := tx.Query(&current).Where(SupplyStockLevel_.Id).Eq(level.Id).Where(SupplyStockLevel_.TenantId).Eq(level.TenantId)
 	got, err := ReadOneSupplyStockLevel(qb, &current)
@@ -238,7 +238,7 @@ func applyToLevel(tx *orm.DB, level *SupplyStockLevel, expectedRevision int64, d
 }
 
 // addMovement appends one ledger entry inside the transaction.
-func (m *Module) addMovement(tx *orm.DB, tenantId, batchId, locationId string, t stock.Movement, quantity float64, docType, docId, note, by string, now int64) (SupplyMovement, error) {
+func (m *Module) addMovement(tx *orm.DB, tenantId, batchId, locationId string, t stock.Movement, quantity float64, docType, docId, note, by string, now time.Nano) (SupplyMovement, error) {
 	mv := SupplyMovement{
 		Id: m.ids.NewID(), TenantId: tenantId, BatchId: batchId, LocationId: locationId, MovementType: string(t), Quantity: quantity,
 		SourceDocumentType: docType, SourceDocumentId: docId, Note: note, CreatedAt: now, CreatedBy: by,
@@ -288,7 +288,7 @@ func (m *Module) ReceiveStock(a ReceiveStockArgs) (SupplyMovement, error) {
 	if a.UnitCost < 0 {
 		return SupplyMovement{}, ErrUnitCost
 	}
-	now := time.Now()
+	now := time.NowNano()
 	var mv SupplyMovement
 	err := m.db.Tx(func(tx *orm.DB) error {
 		item, err := getItem(tx, a.TenantId, a.ItemId)
@@ -347,7 +347,7 @@ func (m *Module) RegisterEntry(a RegisterEntryArgs) (SupplyMovement, error) {
 	if a.Quantity <= 0 {
 		return SupplyMovement{}, ValidationError{Err: stock.ErrQuantity}
 	}
-	now := time.Now()
+	now := time.NowNano()
 	var mv SupplyMovement
 	err := m.db.Tx(func(tx *orm.DB) error {
 		if _, err := getItem(tx, a.TenantId, a.ItemId); err != nil {
@@ -392,7 +392,7 @@ func (m *Module) RegisterOutput(a RegisterOutputArgs) ([]SupplyMovement, error) 
 	if t != stock.InternalUse && t != stock.AdjustOut {
 		return nil, ErrMovementType
 	}
-	now := time.Now()
+	now := time.NowNano()
 	var out []SupplyMovement
 	var costs []int64 // unit cost of the batch of each movement, same order as out
 	err := m.db.Tx(func(tx *orm.DB) error {
@@ -409,7 +409,7 @@ func (m *Module) RegisterOutput(a RegisterOutputArgs) ([]SupplyMovement, error) 
 			if err != nil {
 				return err
 			}
-			allocateAt := nowSeconds()
+			allocateAt := time.NowUnix()
 			if t == stock.AdjustOut {
 				allocateAt = 0 // a write-off may take expired stock: with now = 0 no lot counts as expired
 			}
@@ -435,7 +435,7 @@ func (m *Module) RegisterOutput(a RegisterOutputArgs) ([]SupplyMovement, error) 
 			if !found || level.Quantity < a.Quantity {
 				return ErrInsufficientStock
 			}
-			if t != stock.AdjustOut && (stock.Lot{Expiry: batch.ExpirationDate}).Expired(nowSeconds()) {
+			if t != stock.AdjustOut && (stock.Lot{Expiry: batch.ExpirationDate}).Expired(time.NowUnix()) {
 				return ErrBatchExpired
 			}
 			takes = []stock.Take{{LotID: batch.Id, Quantity: a.Quantity}}
@@ -487,7 +487,7 @@ func (m *Module) TransferStock(a TransferStockArgs) ([]SupplyMovement, error) {
 	if a.FromLocationId == a.ToLocationId {
 		return nil, ErrSameLocation
 	}
-	now := time.Now()
+	now := time.NowNano()
 	var out []SupplyMovement
 	err := m.db.Tx(func(tx *orm.DB) error {
 		if _, err := getItem(tx, a.TenantId, a.ItemId); err != nil {
@@ -507,7 +507,7 @@ func (m *Module) TransferStock(a TransferStockArgs) ([]SupplyMovement, error) {
 		if err != nil {
 			return err
 		}
-		takes, err := stock.Allocate(lots, a.Quantity, nowSeconds())
+		takes, err := stock.Allocate(lots, a.Quantity, time.NowUnix())
 		if err == stock.ErrInsufficient {
 			return ErrInsufficientStock
 		}
@@ -582,7 +582,7 @@ func (m *Module) publishCosts(movements []SupplyMovement, unitCosts []int64) err
 			Amount: price,
 			Scope:  m.scope,
 			Source: money.Ref{Type: sourceType, ID: mv.Id},
-			At:     mv.CreatedAt,
+			At:     mv.CreatedAt.Unix(),
 		}
 		if err := money.Publish(m.pub, fact); err != nil {
 			return fmt.Err(msgPublishCost, err)
@@ -591,12 +591,6 @@ func (m *Module) publishCosts(movements []SupplyMovement, unitCosts []int64) err
 	return nil
 }
 
-// nanosPerSecond converts webtyp.com/time's clock (Unix nanoseconds) to the Unix seconds of every expiry date
-// (expiration_date and webtyp.com/stock).
-const nanosPerSecond = 1000000000
-
-// nowSeconds is the current time in the unit of an expiry date. Compare an expiry only with this, never with time.Now().
-func nowSeconds() int64 { return time.Now() / nanosPerSecond }
 
 // checkRoomFree: an active location that names a room must be the only active one of its tenant that names it.
 func (m *Module) checkRoomFree(l SupplyLocation) error {

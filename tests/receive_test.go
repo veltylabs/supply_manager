@@ -3,12 +3,14 @@ package tests
 import (
 	"testing"
 
+	"webtyp.com/time"
+
 	supplymanager "github.com/veltylabs/supply_manager"
 	"webtyp.com/stock"
 )
 
 // receive builds the arguments of a ReceiveStock for an item and a location; the tests change what they exercise.
-func receive(itemId, locationId, batch string, expiry int64, quantity float64) supplymanager.ReceiveStockArgs {
+func receive(itemId, locationId, batch string, expiry time.Unix, quantity float64) supplymanager.ReceiveStockArgs {
 	return supplymanager.ReceiveStockArgs{
 		TenantId: testTenant, ItemId: itemId, LocationId: locationId, BatchNumber: batch, ExpirationDate: expiry, Quantity: quantity,
 	}
@@ -17,7 +19,7 @@ func receive(itemId, locationId, batch string, expiry int64, quantity float64) s
 func TestReceiveStock_AddsUpAndWritesTheLedger(t *testing.T) {
 	m := newModule(t)
 	p, loc := newItem(t, m, "p1"), newLocation(t, m, "Store")
-	future := nowSec() + 30*stock.SecondsPerDay
+	future := time.NowUnix() + 30*time.Day
 
 	first, err := m.ReceiveStock(receive(p.Id, loc.Id, "L1", future, 10))
 	if err != nil {
@@ -39,7 +41,7 @@ func TestReceiveStock_AddsUpAndWritesTheLedger(t *testing.T) {
 func TestReceiveStock_Rules(t *testing.T) {
 	m := newModule(t)
 	p, loc := newItem(t, m, "p1"), newLocation(t, m, "Store")
-	future := nowSec() + 30*stock.SecondsPerDay
+	future := time.NowUnix() + 30*time.Day
 
 	cases := []struct {
 		name string

@@ -3,6 +3,8 @@ package tests
 import (
 	"testing"
 
+	"webtyp.com/time"
+
 	supplymanager "github.com/veltylabs/supply_manager"
 	"webtyp.com/stock"
 )
@@ -43,9 +45,9 @@ func TestUseInRoom_TakesFromTheRoomLocationAndReturnsTheCost(t *testing.T) {
 	shelf := roomLocation(t, m, "Box 1 shelf", "room-1")
 	store := newLocation(t, m, "Store")
 	for _, r := range []supplymanager.ReceiveStockArgs{
-		{TenantId: testTenant, ItemId: item.Id, LocationId: shelf.Id, BatchNumber: "A", ExpirationDate: nowSec() + 10*stock.SecondsPerDay, UnitCost: 100, Quantity: 2},
-		{TenantId: testTenant, ItemId: item.Id, LocationId: shelf.Id, BatchNumber: "B", ExpirationDate: nowSec() + 90*stock.SecondsPerDay, UnitCost: 150, Quantity: 5},
-		{TenantId: testTenant, ItemId: item.Id, LocationId: store.Id, BatchNumber: "C", ExpirationDate: nowSec() + 5*stock.SecondsPerDay, UnitCost: 1, Quantity: 50},
+		{TenantId: testTenant, ItemId: item.Id, LocationId: shelf.Id, BatchNumber: "A", ExpirationDate: time.NowUnix() + 10*time.Day, UnitCost: 100, Quantity: 2},
+		{TenantId: testTenant, ItemId: item.Id, LocationId: shelf.Id, BatchNumber: "B", ExpirationDate: time.NowUnix() + 90*time.Day, UnitCost: 150, Quantity: 5},
+		{TenantId: testTenant, ItemId: item.Id, LocationId: store.Id, BatchNumber: "C", ExpirationDate: time.NowUnix() + 5*time.Day, UnitCost: 1, Quantity: 50},
 	} {
 		if _, err := m.ReceiveStock(r); err != nil {
 			t.Fatalf("ReceiveStock %s: %v", r.BatchNumber, err)

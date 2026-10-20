@@ -2,8 +2,10 @@
 PLAN: "refactor: typed instants of webtyp/time v0.6 in supply_manager — every instant field is time.Unix or time.Nano, no unit arithmetic"
 EXECUTOR: jules
 REVIEWER: none
-STATUS: running
+STATUS: review
 SESSION: 1112290811066765399
+PR: https://github.com/veltylabs/supply_manager/pull/2
+REVIEWED_COMMIT: 32525446ad6df6bfb8ff061977b9103cf286bac7
 ---
 
 > Read AGENTS.md at the repo root before any change. This plan is complete: do not guess; if something does not fit, stop and ask in the PR.

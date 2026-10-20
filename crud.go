@@ -41,7 +41,7 @@ func (m *Module) UpdateItem(p SupplyItem) (SupplyItem, error) {
 	if err != nil {
 		return SupplyItem{}, err
 	}
-	p.UpdatedAt = time.Now()
+	p.UpdatedAt = time.NowNano()
 	if err := checkItem(&p); err != nil {
 		return SupplyItem{}, err
 	}
@@ -112,7 +112,7 @@ func (m *Module) DeactivateItem(tenantId, id string) error {
 		return err
 	}
 	p.IsActive = false
-	p.UpdatedAt = time.Now()
+	p.UpdatedAt = time.NowNano()
 	return m.db.Update(&p, orm.Eq(SupplyItem_.Id, p.Id), orm.Eq(SupplyItem_.TenantId, p.TenantId))
 }
 
@@ -143,7 +143,7 @@ func (m *Module) UpdateLocation(l SupplyLocation) (SupplyLocation, error) {
 	if err != nil {
 		return SupplyLocation{}, err
 	}
-	l.UpdatedAt = time.Now()
+	l.UpdatedAt = time.NowNano()
 	if err := l.Validate(model.ActionUpdate); err != nil {
 		return SupplyLocation{}, ValidationError{Err: err}
 	}

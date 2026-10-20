@@ -18,8 +18,6 @@ There is no stock screen in this version.
 - A batch's expiry is **optional** (0 = does not expire); a supply with no lot uses the batch number `NoBatchNumber` (`NO-BATCH`), passed explicitly.
 - Outputs accepted: `stock.InternalUse` (the use in a consultation) and `stock.AdjustOut` (a write-off); `stock.Sale` is `ErrMovementType`. An expired batch is never used (`ErrBatchExpired`); only a write-off may take expired stock. `min_quantity` (0 = no alert) feeds `ListLowStock`.
 
-- **Time units**: expiry dates are Unix **seconds**; `webtyp.com/time.Now()` returns Unix **nanoseconds**. The module
-  compares an expiry only with `nowSeconds()`; `created_at` and `updated_at` keep the nanoseconds of `time.Now()`.
 
 - **Rooms**: a location may name the room (box) it supplies (`room_id`, a soft reference to `room_layout`); at most one
   active location per room and tenant (`ErrRoomTaken`). `UseInRoom` consumes from that location; the room picker in the

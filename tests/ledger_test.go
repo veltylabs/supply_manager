@@ -2,10 +2,13 @@
 
 package tests
 
+
 import (
 	"testing"
 
 	supplymanager "github.com/veltylabs/supply_manager"
+	"webtyp.com/time"
+
 	"webtyp.com/stock"
 	"webtyp.com/stock/stocktest"
 )
@@ -60,7 +63,7 @@ func (l *ledger) location(suite string) string {
 	return loc.Id
 }
 
-func (l *ledger) Receive(item, location, lot string, expiry int64, quantity float64) error {
+func (l *ledger) Receive(item, location, lot string, expiry time.Unix, quantity float64) error {
 	mv, err := l.m.ReceiveStock(supplymanager.ReceiveStockArgs{
 		TenantId: testTenant, ItemId: l.item(item), LocationId: l.location(location),
 		BatchNumber: lot, ExpirationDate: expiry, Quantity: quantity,
