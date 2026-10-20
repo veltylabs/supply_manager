@@ -9,7 +9,7 @@ require (
 	webtyp.com/fmt v1.0.0
 	webtyp.com/html v0.0.27
 	webtyp.com/input v0.0.21
-	webtyp.com/layout v0.3.56
+	webtyp.com/layout v0.3.57
 	webtyp.com/model v0.2.4
 	webtyp.com/money v0.1.3
 	webtyp.com/orm v0.12.10
