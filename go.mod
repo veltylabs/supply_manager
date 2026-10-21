@@ -14,7 +14,7 @@ require (
 	webtyp.com/money v0.1.3
 	webtyp.com/orm v0.12.10
 	webtyp.com/router v0.4.3
-	webtyp.com/stock v0.1.3
+	webtyp.com/stock v0.1.4
 	webtyp.com/storage v0.1.8
 	webtyp.com/svg v0.3.30
 	webtyp.com/time v0.6.2
