@@ -5,10 +5,17 @@ package ui
 import (
 	supplymanager "github.com/veltylabs/supply_manager"
 	"webtyp.com/fmt"
+	"webtyp.com/lang"
 	"webtyp.com/layout/crudview"
 	"webtyp.com/layout/platformd"
 	"webtyp.com/model"
 	"webtyp.com/router"
+)
+
+const (
+	descSupply    lang.Text = "Stock levels, lot tracking, and storage location assignments"
+	descItems     lang.Text = "Catalog of managed items, categories, and inventory configurations"
+	descLocations lang.Text = "Storage facilities, rooms, and bin assignments"
 )
 
 // Browser builds the screen of the module for the app's modules/browser.go: the group "Farmacia" with its two children,
@@ -51,8 +58,8 @@ func Browser(caller router.Caller, ids model.IDGenerator, tenantID string) (plat
 		return nil, err
 	}
 
-	return platformd.NewGroupUIModule(ID, Label, IconSupply, []platformd.UIModule{
-		platformd.NewUIModule(ID+".items", "Artículos", IconItems, itemsView),
-		platformd.NewUIModule(ID+".locations", "Ubicaciones", IconLocations, locationsView),
-	}), nil
+	return platformd.Describe(platformd.NewGroupUIModule(ID, Label, IconSupply, []platformd.UIModule{
+		platformd.Describe(platformd.NewUIModule(ID+".items", "Artículos", IconItems, itemsView), descItems),
+		platformd.Describe(platformd.NewUIModule(ID+".locations", "Ubicaciones", IconLocations, locationsView), descLocations),
+	}), descSupply), nil
 }

@@ -50,6 +50,9 @@
     "total": [""],
     "unit cost": [""],
     "updated at": [""],
-    "within days": [""]
+    "within days": [""],
+    "Stock levels, lot tracking, and storage location assignments": ["Niveles de stock, seguimiento de lotes y asignaciones de ubicaciones de almacenamiento"],
+    "Catalog of managed items, categories, and inventory configurations": ["Catálogo de artículos gestionados, categorías y configuraciones de inventario"],
+    "Storage facilities, rooms, and bin assignments": ["Instalaciones de almacenamiento, salas y asignaciones de depósitos"]
   }
 }

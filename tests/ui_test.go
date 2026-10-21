@@ -46,9 +46,15 @@ func TestBrowser_IsAGroupOfItemsAndLocations(t *testing.T) {
 	if len(children) != 2 || children[0].Label() != "Artículos" || children[1].Label() != "Ubicaciones" {
 		t.Fatalf("two children Artículos and Ubicaciones expected, got %d", len(children))
 	}
+	if desc, ok := screen.(platformd.Described); !ok || desc.Description() == "" {
+		t.Errorf("screen must be a platformd.Described with a description")
+	}
 	for i, c := range children {
 		if _, ok := c.View().(*crudview.CrudView); !ok {
 			t.Errorf("child %d must be a *crudview.CrudView, got %T", i, c.View())
+		}
+		if desc, ok := c.(platformd.Described); !ok || desc.Description() == "" {
+			t.Errorf("child %d must be a platformd.Described with a description", i)
 		}
 	}
 }

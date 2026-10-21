@@ -2,8 +2,10 @@
 PLAN: "feat(ui): describe supply screens with platformd.Describe (H8b)"
 EXECUTOR: jules
 REVIEWER: none
-STATUS: running
+STATUS: review
 SESSION: 11417708814429379795
+PR: https://github.com/veltylabs/supply_manager/pull/5
+REVIEWED_COMMIT: 4e887ea04ded11c36df5f9b0a3b1f67e2d6492e4
 ---
 
 > Read AGENTS.md at the repo root before any change.
@@ -67,3 +69,7 @@ Files: `tests/ui_test.go`
 |---|---|---|
 | 1 | `ui/browser.go`, `lang.json` | Add descriptions with `platformd.Describe` and Spanish translations |
 | 2 | `tests/ui_test.go` | Assert `platformd.Described` capability and verify `gotest ./...` |
+
+## Executor notes
+
+- Since `langc` AST parser ignores files with build tags (like `//go:build browser` in `ui/browser.go`), I manually added the specified description constants to `lang.json` and provided their Spanish translations, rather than relying on `langc sync`.
