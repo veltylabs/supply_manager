@@ -10,7 +10,7 @@ require (
 	webtyp.com/html v0.0.28
 	webtyp.com/input v0.0.21
 	webtyp.com/lang v0.1.7
-	webtyp.com/layout v0.3.58
+	webtyp.com/layout v0.3.63
 	webtyp.com/model v0.2.4
 	webtyp.com/money v0.1.3
 	webtyp.com/msgtype v0.1.0
