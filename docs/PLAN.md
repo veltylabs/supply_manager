@@ -67,3 +67,7 @@ Files: `tests/ui_test.go`
 |---|---|---|
 | 1 | `ui/browser.go`, `lang.json` | Add descriptions with `platformd.Describe` and Spanish translations |
 | 2 | `tests/ui_test.go` | Assert `platformd.Described` capability and verify `gotest ./...` |
+
+## Executor notes
+
+- Since `langc` AST parser ignores files with build tags (like `//go:build browser` in `ui/browser.go`), I manually added the specified description constants to `lang.json` and provided their Spanish translations, rather than relying on `langc sync`.
