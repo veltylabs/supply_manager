@@ -5,6 +5,7 @@ import (
 	"webtyp.com/fmt"
 	"webtyp.com/model"
 	"webtyp.com/money"
+	"webtyp.com/notify"
 	"webtyp.com/orm"
 	"webtyp.com/stock"
 	"webtyp.com/time"
@@ -26,20 +27,22 @@ type Deps struct {
 	IDs        model.IDGenerator // required: the module never builds a generator
 	Publisher  events.Publisher  // optional: nil disables the events and the cost facts
 	MoneyScope string            // optional: the area of the business the cost facts belong to; "" disables the cost facts
+	AlertArea  string            // optional: the application's notify.Area code for this module's alerts; "" disables them
 }
 
 type Module struct {
-	db    *orm.DB
-	ids   model.IDGenerator
-	pub   events.Publisher
-	scope string
+	db        *orm.DB
+	ids       model.IDGenerator
+	pub       events.Publisher
+	scope     string
+	alertArea string
 }
 
 func New(db *orm.DB, deps Deps) (*Module, error) {
 	if deps.IDs == nil {
 		return nil, fmt.Err(msgNeedIDs)
 	}
-	return &Module{db: db, ids: deps.IDs, pub: deps.Publisher, scope: deps.MoneyScope}, nil
+	return &Module{db: db, ids: deps.IDs, pub: deps.Publisher, scope: deps.MoneyScope, alertArea: deps.AlertArea}, nil
 }
 
 func (m *Module) ModelName() string { return ModelName }
@@ -384,6 +387,8 @@ func (m *Module) RegisterEntry(a RegisterEntryArgs) (SupplyMovement, error) {
 // first expiry first out (stock.Allocate); only a write-off (stock.AdjustOut) may take expired stock. It returns one
 // movement per batch used. If the cost fact cannot be published after the commit, the movements are returned WITH the
 // error: the stock change is already saved.
+const msgBelowMinimum = "%v %s left; minimum %v."
+
 func (m *Module) RegisterOutput(a RegisterOutputArgs) ([]SupplyMovement, error) {
 	if a.Quantity <= 0 {
 		return nil, ValidationError{Err: stock.ErrQuantity}
@@ -392,10 +397,16 @@ func (m *Module) RegisterOutput(a RegisterOutputArgs) ([]SupplyMovement, error) 
 	if t != stock.InternalUse && t != stock.AdjustOut {
 		return nil, ErrMovementType
 	}
+
+	before, err := m.totalItem(a.TenantId, a.ItemId)
+	if err != nil {
+		return nil, err
+	}
+
 	now := time.NowNano()
 	var out []SupplyMovement
 	var costs []int64 // unit cost of the batch of each movement, same order as out
-	err := m.db.Tx(func(tx *orm.DB) error {
+	err = m.db.Tx(func(tx *orm.DB) error {
 		if _, err := getItem(tx, a.TenantId, a.ItemId); err != nil {
 			return err
 		}
@@ -474,6 +485,29 @@ func (m *Module) RegisterOutput(a RegisterOutputArgs) ([]SupplyMovement, error) 
 	if err := m.publishCosts(out, costs); err != nil {
 		return out, err
 	}
+
+	if len(out) > 0 {
+		item, err := m.GetItem(a.TenantId, a.ItemId)
+		if err == nil {
+			after, err := m.totalItem(a.TenantId, a.ItemId)
+			if err == nil && stock.CrossedLow(before, after, item.MinQuantity) {
+				alertErr := m.raise(notify.Alert{
+					Code:    AlertBelowMinimum,
+					Subject: item.Name,
+					Body:    fmt.Sprintf(msgBelowMinimum, after, item.Unit, item.MinQuantity),
+					Source:  notify.Ref{Type: alertSourceItem, ID: item.Id},
+				})
+				if alertErr != nil {
+					return out, alertErr
+				}
+			} else if err != nil {
+				return out, err
+			}
+		} else {
+			return out, err
+		}
+	}
+
 	return out, nil
 }
 

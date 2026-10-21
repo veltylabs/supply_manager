@@ -1,6 +1,8 @@
 package supplymanager
 
 import (
+	"webtyp.com/fmt"
+	"webtyp.com/notify"
 	"webtyp.com/time"
 
 	"slices"
@@ -70,11 +72,44 @@ func (m *Module) ListLowStock(a ListLowStockArgs) ([]LowStock, error) {
 		for _, level := range levels {
 			total += level.Quantity
 		}
-		if total <= p.MinQuantity {
+		if stock.Low(total, p.MinQuantity) {
 			out = append(out, LowStock{ItemId: p.Id, ItemName: p.Name, Total: total, MinQuantity: p.MinQuantity})
 		}
 	}
 	return out, nil
+}
+
+// ReviewExpiring raises one alert when batches with stock are expired or expire within withinDays,
+// and returns them. The application calls it once a day; this module has no scheduler.
+func (m *Module) ReviewExpiring(tenantId string, withinDays int) ([]ExpiringStock, error) {
+	rows, err := m.ListExpiring(ListExpiringArgs{TenantId: tenantId, WithinDays: int64(withinDays)})
+
+	if len(rows) == 0 {
+		return rows, err
+	}
+
+	var expired, soon int
+	for _, row := range rows {
+		if row.Expired {
+			expired++
+		} else {
+			soon++
+		}
+	}
+
+	const msgExpiring = "%d expired batches and %d expiring within %d days."
+	alertErr := m.raise(notify.Alert{
+		Code:    AlertExpiring,
+		Subject: string(textExpiringName),
+		Body:    fmt.Sprintf(msgExpiring, expired, soon, withinDays),
+		Source:  notify.Ref{Type: alertSourceReview, ID: time.FormatISO8601(time.NowUnix())[:10]},
+	})
+
+	if alertErr != nil {
+		return rows, alertErr
+	}
+
+	return rows, err
 }
 
 // ItemExists tells whether an item exists in the tenant and is active. Other modules declare the same method in a

@@ -13,6 +13,7 @@ There is no stock screen in this version.
 - **Every stock change is one transaction** with an optimistic revision check on the stock level (`ErrConflict` when the row changed).
 - **Cost**: a batch has an optional `unit_cost` (whole pesos per unit, 0 = unknown). With `Deps.Publisher` and `Deps.MoneyScope` set, each output movement whose batch has a cost publishes one `money.Consumed` fact (cost × quantity, rounded half away from zero). A purchase is never a fact of this module.
 - **Events**: one `supply.movement.registered` per movement, after the commit.
+- **Alerts**: a `supply.below_minimum` alert is raised when an item's total stock crosses its minimum after an output. A summary `supply.expiring` alert is raised by the daily `ReviewExpiring` review when batches expire soon.
 - **Tenancy**: every query of a stock operation filters by `tenant_id`; the operations the generic view drives resolve the row by id and use the tenant the row stores.
 - Units: `PIECE`, `BOX`, `PAIR`, `ML`, `GRAM`. Supplies have **no price, no tax treatment and no sale flag**.
 - A batch's expiry is **optional** (0 = does not expire); a supply with no lot uses the batch number `NoBatchNumber` (`NO-BATCH`), passed explicitly.

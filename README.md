@@ -78,6 +78,13 @@ marked done; the room comes from `room_layout`. No location for the room is `Err
 
 If `Deps.MoneyScope` is set and a batch has a unit cost, each output movement publishes one `money.Consumed` fact (cost × quantity, rounded half away from zero). A purchase is never a fact of this module.
 
+## Alerts
+
+This module can raise alerts when `Deps.Publisher` and `Deps.AlertArea` are set:
+- **Below minimum:** After an output, if the item's total stock goes from above its `min_quantity` to at or below it, one `supply.below_minimum` alert is raised. Staying low does not repeat the alert. Transfers do not trigger this.
+- **Expiring:** The application can call `ReviewExpiring(tenantId, withinDays)` daily to review stock. It will raise one summary `supply.expiring` alert if at least one batch with stock is expired or expires within that number of days.
+- The application must register `AlertKinds(area)` to add the alert definitions to its `notify.Registry`.
+
 ## Key files
 
 | File | What it is |
