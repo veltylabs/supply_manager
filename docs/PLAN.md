@@ -2,8 +2,10 @@
 PLAN: "feat(ui): describe supply screens with platformd.Describe (H8b)"
 EXECUTOR: jules
 REVIEWER: none
-STATUS: running
+STATUS: review
 SESSION: 11417708814429379795
+PR: https://github.com/veltylabs/supply_manager/pull/5
+REVIEWED_COMMIT: 4e887ea04ded11c36df5f9b0a3b1f67e2d6492e4
 ---
 
 > Read AGENTS.md at the repo root before any change.
