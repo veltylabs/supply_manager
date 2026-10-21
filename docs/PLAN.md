@@ -2,8 +2,10 @@
 PLAN: "feat: raise notify alerts — below minimum when an output crosses it, and the daily expiry review"
 EXECUTOR: jules
 REVIEWER: none
-STATUS: running
+STATUS: review
 SESSION: 1520402411300222046
+PR: https://github.com/veltylabs/supply_manager/pull/3
+REVIEWED_COMMIT: 92012f89a4a71205f842937c5d90b5b1821374f4
 ---
 
 > Read AGENTS.md at the repo root before any change.
