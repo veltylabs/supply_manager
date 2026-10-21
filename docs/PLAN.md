@@ -2,6 +2,8 @@
 PLAN: "feat: raise notify alerts — below minimum when an output crosses it, and the daily expiry review"
 EXECUTOR: jules
 REVIEWER: none
+STATUS: running
+SESSION: 1520402411300222046
 ---
 
 > Read AGENTS.md at the repo root before any change.
