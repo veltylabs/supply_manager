@@ -2,7 +2,8 @@
 PLAN: "feat(ui): describe supply screens with platformd.Describe (H8b)"
 EXECUTOR: jules
 REVIEWER: none
-STATUS: dispatch
+STATUS: running
+SESSION: 11417708814429379795
 ---
 
 > Read AGENTS.md at the repo root before any change.
