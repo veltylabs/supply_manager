@@ -10,13 +10,13 @@ require (
 	webtyp.com/html v0.0.30
 	webtyp.com/input v0.0.21
 	webtyp.com/lang v0.1.10
-	webtyp.com/layout v0.3.75
+	webtyp.com/layout v0.3.76
 	webtyp.com/model v0.2.6
 	webtyp.com/money v0.2.0
 	webtyp.com/msgtype v0.1.0
 	webtyp.com/notify v0.2.2
 	webtyp.com/orm v0.12.10
-	webtyp.com/router v0.4.6
+	webtyp.com/router v0.4.8
 	webtyp.com/stock v0.1.4
 	webtyp.com/storage v0.1.8
 	webtyp.com/svg v0.3.30
