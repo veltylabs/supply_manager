@@ -176,7 +176,7 @@ reflection-free and TinyGo-sized. A module targets `wasm`/TinyGo first, so it fo
 
 The whitelist and blacklist above apply to the **root domain package**. Three sub-packages are exempt, and only them:
 
-- `ui/` (package `ui`, no build tag; `css.go`/`svg.go` tagged `!wasm`) may import `webtyp.com/layout/*`, `webtyp.com/components/*`, `dom`, `html`, `css`, `svg`, `widget`. It is the module's screen: `const ID`, `const Label` and `Browser(caller router.Caller, ids model.IDGenerator, tenantID string) (platformd.UIModule, error)`.
+- `ui/` (package `ui`, no build tag) declares the module's screens: `const ID`, `const Label` and `Screens(caller router.Caller) []view.Screen`. It imports `webtyp.com/view`, `webtyp.com/router` and the module itself; never `webtyp.com/layout`.
 - `seed/` (package `seed`, no build tag) holds demo data: `Load(...) (Data, error)`, which writes through the module's own methods so every row is validated, and returns the rows it created so downstream demos can reference them.
 - `web/` (package `main`, `web/browser.go` tagged `browser`) is the runnable demo and may additionally import the concrete `webtyp.com/storage/mem`, `webtyp.com/router/loopback`, `webtyp.com/events/mock`, `webtyp.com/unixid` and `webtyp.com/auth/trusted_ip` (for `ValidateRUT`).
 
