@@ -15,7 +15,7 @@ require (
 	webtyp.com/msgtype v0.1.0
 	webtyp.com/notify v0.2.2
 	webtyp.com/orm v0.12.10
-	webtyp.com/router v0.4.8
+	webtyp.com/router v0.4.9
 	webtyp.com/stock v0.1.4
 	webtyp.com/storage v0.1.8
 	webtyp.com/svg v0.3.30
