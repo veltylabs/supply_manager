@@ -2,8 +2,10 @@
 PLAN: "feat!: list rows declared on the model fields (Row/Options); Item() removed"
 EXECUTOR: jules
 REVIEWER: none
-STATUS: running
+STATUS: review
 SESSION: 17602843766337239489
+PR: https://github.com/veltylabs/supply_manager/pull/6
+REVIEWED_COMMIT: ab0bf4cfccb1df18b9f67c5d9373e977aef9b760
 ---
 
 > Read AGENTS.md at the repo root before any change.
@@ -134,3 +136,8 @@ rewrite what is already Spanish), and add a short usage example to exported-symb
 | 4 | `ops.go` | save answers the record |
 | 5 | `tests/*` | `model.RowOf` |
 | 6 | docs, comments, `lang.json` | Spanish |
+
+## Executor notes
+- `view.NewCallerLister` was successfully updated in `view.go` for the views. There were no `Item()` references or `view.NewCallerLister` found in any tests besides `ui_test.go` checking basic screen initialization and no `Item()` callers.
+- Re-read models explicitly when `cat`/`sed` output truncated to ensure complete understanding, preventing faulty updates to `SupplyLocationModel` and enabling completion of tests in Stage 5 securely.
+- Left `model.go` string literals (like `Label: "Name"`) in English to properly work with `lang.json` and `langc` synchronization instead of hardcoding Spanish values into the code logic.

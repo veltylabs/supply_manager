@@ -1,11 +1,11 @@
 # supply_manager
 <img src="docs/img/badges.svg">
 
-This module manages the clinical supplies for the clinic (such as gloves, syringes, and gauze). It handles the items, their batches (a supply may have no lot, it then uses `NoBatchNumber`; the expiry date is optional), the locations they are kept in, and the append-only ledger of movements.
+Este módulo maneja los insumos clínicos de la clínica (como guantes, jeringas y gasas). Gestiona los artículos, sus lotes (un insumo puede no tener lote, en cuyo caso usa `NoBatchNumber`; la fecha de vencimiento es opcional), las ubicaciones donde se guardan, y el libro mayor de movimientos de solo adición.
 
-Supplies are not sold and have no price, and what is used in a consultation is recorded by `clinical_encounter` as a `stock.InternalUse` output that carries the encounter id.
+Los insumos no se venden y no tienen precio, y lo que se usa en una consulta es registrado por `clinical_encounter` como una salida `stock.InternalUse` que lleva el id de la consulta.
 
-## Quick Start
+## Inicio Rápido
 
 ```go
 package main
@@ -28,19 +28,19 @@ func example(db *orm.DB, ids model.IDGenerator, broker events.Publisher) {
 	// Create an item
 	item, _ := m.CreateItem(supplymanager.SupplyItem{TenantId: "t1", Sku: "123", Name: "Gloves", Unit: supplymanager.UnitBox, IsActive: true})
 
-	// Receive stock
-	m.ReceiveStock(supplymanager.ReceiveStockArgs{TenantId: "t1", ItemId: item.Id, LocationId: loc.Id, BatchNumber: supplymanager.NoBatchNumber, Quantity: 10}) // no lot, no expiry
+	// Receive stock (Recibir stock)
+	m.ReceiveStock(supplymanager.ReceiveStockArgs{TenantId: "t1", ItemId: item.Id, LocationId: loc.Id, BatchNumber: supplymanager.NoBatchNumber, Quantity: 10}) // sin lote, sin vencimiento
 
-	// Register an output
+	// Register an output (Registrar una salida)
 	m.RegisterOutput(supplymanager.RegisterOutputArgs{TenantId: "t1", ItemId: item.Id, LocationId: loc.Id, Quantity: 2, MovementType: string(stock.InternalUse)})
 }
 ```
 
-## Operations
+## Operaciones
 
-Every operation is called `supply.<name>` and declares its RBAC resource and action in `MountOperations`.
+Cada operación se llama `supply.<name>` y declara su recurso y acción RBAC en `MountOperations`.
 
-| Operation | Constant | Resource | Action |
+| Operación | Constante | Recurso | Acción |
 |---|---|---|---|
 | `list_items` | `OpListItems` | `supply_item` | read |
 | `get_item` | `OpGetItem` | `supply_item` | read |
@@ -63,42 +63,37 @@ Every operation is called `supply.<name>` and declares its RBAC resource and act
 | `list_expiring` | `OpListExpiring` | `supply_stock_level` | read |
 | `list_low_stock` | `OpListLowStock` | `supply_stock_level` | read |
 
-## Readers
+## Lectores (Readers)
 
-`ListExpiring` and `ListLowStock` are reports. For other modules: `ItemExists(tenantId, itemId) (bool, error)` (exists in
-the tenant and is active) and `ItemCard`, what another module snapshots about an item; an absent or foreign item is
-`ErrNotFound`. A module that needs them declares the method in a narrow interface of its own.
+`ListExpiring` y `ListLowStock` son reportes. Para otros módulos: `ItemExists(tenantId, itemId) (bool, error)` (existe en el tenant y está activo) y `ItemCard`, lo que otro módulo captura de un artículo; un artículo ausente o foráneo devuelve `ErrNotFound`. Un módulo que los necesita declara el método en una interfaz reducida propia.
 
-`UseInRoom(tenantId, roomId, itemId string, quantity float64, docType, docId, by string) (cost int64, err error)` takes a
-consumption (`stock.InternalUse`, first expiry first out) out of the active location that supplies the room (box) `roomId`,
-records the document that caused it and returns its cost in whole pesos. `clinical_encounter` uses it when an attention is
-marked done; the room comes from `room_layout`. No location for the room is `ErrNoLocationForRoom`.
+`UseInRoom(tenantId, roomId, itemId string, quantity float64, docType, docId, by string) (cost int64, err error)` toma un consumo (`stock.InternalUse`, primero en vencer primero en salir) de la ubicación activa que abastece a la sala (box) `roomId`, registra el documento que lo causó y devuelve su costo en pesos enteros. `clinical_encounter` lo usa cuando una atención se marca como terminada; la sala viene de `room_layout`. Si no hay ubicación para la sala devuelve `ErrNoLocationForRoom`.
 
-## Cost facts
+## Hechos de Costo (Cost facts)
 
-If `Deps.MoneyScope` is set and a batch has a unit cost, each output movement publishes one `money.Consumed` fact (cost × quantity, rounded half away from zero). A purchase is never a fact of this module.
+Si se establece `Deps.MoneyScope` y un lote tiene un costo unitario, cada movimiento de salida publica un hecho `money.Consumed` (costo × cantidad, redondeado hacia afuera del cero). Una compra nunca es un hecho de este módulo.
 
-## Alerts
+## Alertas
 
-This module can raise alerts when `Deps.Publisher` and `Deps.AlertArea` are set:
-- **Below minimum:** After an output, if the item's total stock goes from above its `min_quantity` to at or below it, one `supply.below_minimum` alert is raised. Staying low does not repeat the alert. Transfers do not trigger this.
-- **Expiring:** The application can call `ReviewExpiring(tenantId, withinDays)` daily to review stock. It will raise one summary `supply.expiring` alert if at least one batch with stock is expired or expires within that number of days.
-- The application must register `AlertKinds(area)` to add the alert definitions to its `notify.Registry`.
+Este módulo puede emitir alertas cuando `Deps.Publisher` y `Deps.AlertArea` están configurados:
+- **Por debajo del mínimo:** Tras una salida, si el stock total del artículo pasa de estar por encima de su `min_quantity` a estar en o por debajo, se emite una alerta `supply.below_minimum`. Mantenerse bajo no repite la alerta. Las transferencias no disparan esto.
+- **Por vencer:** La aplicación puede llamar a `ReviewExpiring(tenantId, withinDays)` diariamente para revisar el stock. Emitirá una alerta de resumen `supply.expiring` si al menos un lote con stock está vencido o vence dentro de esa cantidad de días.
+- La aplicación debe registrar `AlertKinds(area)` para añadir las definiciones de alerta a su `notify.Registry`.
 
-## Key files
+## Archivos clave
 
-| File | What it is |
+| Archivo | Qué es |
 |---|---|
-| `model.go`, `model_orm.go` | the five tables and every argument model; `model_orm.go` is generated by `ormc`, never edit it |
-| `errors.go` | every error constant (all messages start `supply: `), `statusOf`, `writeError` |
-| `module.go` | `Deps`, `Module`, `New`, and the four stock operations `ReceiveStock`, `RegisterEntry`, `RegisterOutput`, `TransferStock`; cost facts and events |
-| `crud.go` | item and location update / upsert / patch / deactivate / delete |
-| `queries.go`, `reports.go` | the lists, `ListExpiring`, `ListLowStock` and the readers |
-| `ops.go` | the operation names, the wire shapes the generic view sends, `MountOperations` and every handler |
+| `model.go`, `model_orm.go` | las cinco tablas y cada modelo de argumento; `model_orm.go` es generado por `ormc`, nunca editarlo a mano |
+| `errors.go` | cada constante de error (todos los mensajes empiezan con `supply: `), `statusOf`, `writeError` |
+| `module.go` | `Deps`, `Module`, `New`, y las cuatro operaciones de stock `ReceiveStock`, `RegisterEntry`, `RegisterOutput`, `TransferStock`; hechos de costo y eventos |
+| `crud.go` | actualización / upsert / patch / desactivación / borrado de artículo y ubicación |
+| `queries.go`, `reports.go` | las listas, `ListExpiring`, `ListLowStock` y los lectores |
+| `ops.go` | los nombres de operación, las formas de red que envía la vista genérica, `MountOperations` y cada manejador |
 | `view.go` | `NewItemView`, `NewLocationView` |
-| `migrate/migrate.go` | creates the five tables in foreign-key order |
-| `ui/`, `seed/`, `web/` | the screen group "Insumos", the demo data, the in-browser demo |
-| `lang.json` | the Spanish of the form labels and of the option labels (generated with `langc sync .`) |
-| `conflict_internal_test.go` | the stale-revision test (root-level, justified) |
-| `tests/setup_test.go` | helpers: `newModule`, `newItem`, `newLocation`, `testTenant`, `testIDGen` |
-| `tests/receive_test.go`, `output_test.go`, `reports_test.go`, `ops_test.go`, `ui_test.go`, `seed_test.go`, `mount_test.go`, `conformance_test.go`, `ledger_test.go` | tests that exist: use them as the style of yours |
+| `migrate/migrate.go` | crea las cinco tablas en orden de clave foránea |
+| `ui/`, `seed/`, `web/` | el grupo de pantallas "Insumos", los datos de demostración, la demo en el navegador |
+| `lang.json` | el español de las etiquetas del formulario y de las opciones (generado con `langc sync .`) |
+| `conflict_internal_test.go` | el test de revisión obsoleta (a nivel raíz, justificado) |
+| `tests/setup_test.go` | ayudantes: `newModule`, `newItem`, `newLocation`, `testTenant`, `testIDGen` |
+| `tests/receive_test.go`, `output_test.go`, `reports_test.go`, `ops_test.go`, `ui_test.go`, `seed_test.go`, `mount_test.go`, `conformance_test.go`, `ledger_test.go` | tests que existen: úsalos como el estilo de los tuyos |

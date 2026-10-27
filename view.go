@@ -7,32 +7,26 @@ import (
 )
 
 const (
-	titleItems     = "Items"
-	titleLocations = "Locations"
+	titleItems     = "Artículos"
+	titleLocations = "Ubicaciones"
 )
 
-// Item projects an item as a view.Item: the label of a row and its secondary text.
-func (m *SupplyItem) Item() view.Item {
-	return view.Item{ID: m.Id, Label: m.Name, Description: m.Sku}
-}
-
-// Item projects a location as a view.Item.
-func (m *SupplyLocation) Item() view.Item {
-	return view.Item{ID: m.Id, Label: m.Name}
-}
-
-// NewItemView builds the Presenter of the items: the engine a renderer (crudview or any other) wraps.
+// NewItemView construye el Presenter de los artículos: el motor que envuelve un renderizador (crudview u otro).
+//
+//	presenter := supplymanager.NewItemView(caller)
 func NewItemView(caller router.Caller, opts ...view.Option) view.Presenter {
-	b := view.NewCallerLister(caller,
+	b := view.NewCallerLister(view.NewRecords().Caller(caller),
 		view.Ops{Module: ModelName, List: OpListItems, Save: OpUpsertItem, Update: OpUpdateItem, Delete: OpDeleteItem},
 		func() model.ModelSlice { return &SupplyItemList{} })
 	allOpts := append([]view.Option{view.WithTitle(titleItems)}, opts...)
 	return view.New(b, &SupplyItem{Unit: UnitPiece, IsActive: true}, allOpts...)
 }
 
-// NewLocationView builds the Presenter of the locations.
+// NewLocationView construye el Presenter de las ubicaciones.
+//
+//	presenter := supplymanager.NewLocationView(caller)
 func NewLocationView(caller router.Caller, opts ...view.Option) view.Presenter {
-	b := view.NewCallerLister(caller,
+	b := view.NewCallerLister(view.NewRecords().Caller(caller),
 		view.Ops{Module: ModelName, List: OpListLocations, Save: OpUpsertLocation, Update: OpUpdateLocation, Delete: OpDeleteLocation},
 		func() model.ModelSlice { return &SupplyLocationList{} })
 	allOpts := append([]view.Option{view.WithTitle(titleLocations)}, opts...)

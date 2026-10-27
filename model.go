@@ -5,10 +5,10 @@ import (
 	"webtyp.com/model"
 )
 
-// ModelName is the wire and RBAC prefix of the module: operations are called "<ModelName>.<op>".
+// ModelName es el prefijo en red y RBAC del módulo: las operaciones se llaman "<ModelName>.<op>".
 const ModelName = "supply"
 
-// Units an item is counted in. The select of the form takes its options from these (ui/browser.go, SetOptions).
+// Units en las que se cuenta un artículo. El select del formulario toma sus opciones de estas (ui/browser.go, SetOptions).
 const (
 	UnitPiece = "PIECE"
 	UnitBox   = "BOX"
@@ -17,17 +17,17 @@ const (
 	UnitGram  = "GRAM"
 )
 
-// NoBatchNumber is the batch number of a supply that has no lot: it is passed explicitly to ReceiveStock.
+// NoBatchNumber es el número de lote de un insumo que no tiene lote: se pasa explícitamente a ReceiveStock.
 const NoBatchNumber = "NO-BATCH"
 
-// SupplyItemModel is a clinical supply (gloves, syringes, gauze). It is not sold and has no price here.
+// SupplyItemModel es un insumo clínico (guantes, jeringas, gasas). No se vende y no tiene precio aquí.
 var SupplyItemModel = model.Definition{
 	Name: "supply_item",
 	Fields: model.Fields{
 		{Name: "id", Type: model.Text(), DB: &model.FieldDB{PK: true}, OmitEmpty: true},
 		{Name: "tenant_id", Type: model.Text(), NotNull: true},
-		{Name: "sku", Type: input.Text(), Label: "SKU", NotNull: true, Permitted: model.Permitted{Letters: true, Numbers: true, Extra: []rune{'-'}, Minimum: 1, Maximum: 50}},
-		{Name: "name", Type: input.Text(), Label: "Name", NotNull: true, Permitted: model.Permitted{Letters: true, Numbers: true, Spaces: true, Tilde: true, Extra: []rune{'.', ',', '(', ')', '-', '/', '%', '+'}, Minimum: 1, Maximum: 255}},
+		{Name: "sku", Type: input.Text(), Label: "SKU", Row: model.RowDetail, NotNull: true, Permitted: model.Permitted{Letters: true, Numbers: true, Extra: []rune{'-'}, Minimum: 1, Maximum: 50}},
+		{Name: "name", Type: input.Text(), Label: "Name", Row: model.RowTitle, NotNull: true, Permitted: model.Permitted{Letters: true, Numbers: true, Spaces: true, Tilde: true, Extra: []rune{'.', ',', '(', ')', '-', '/', '%', '+'}, Minimum: 1, Maximum: 255}},
 		{Name: "unit", Type: input.Select(), Label: "Unit", NotNull: true},
 		{Name: "min_quantity", Type: input.Decimal(), Label: "Minimum quantity", OmitEmpty: true},
 		{Name: "is_active", Type: input.Checkbox(), Label: "Active"},
@@ -35,22 +35,22 @@ var SupplyItemModel = model.Definition{
 	},
 }
 
-// SupplyLocationModel is a place stock is kept: a storeroom, the counter.
+// SupplyLocationModel es un lugar donde se guarda el stock: un almacén, el mostrador.
 var SupplyLocationModel = model.Definition{
 	Name: "supply_location",
 	Fields: model.Fields{
 		{Name: "id", Type: model.Text(), DB: &model.FieldDB{PK: true}, OmitEmpty: true},
 		{Name: "tenant_id", Type: model.Text(), NotNull: true},
-		{Name: "name", Type: input.Text(), Label: "Name", NotNull: true, Permitted: model.Permitted{Letters: true, Numbers: true, Spaces: true, Tilde: true, Minimum: 1, Maximum: 100}},
-		// room_id is the room (box) this location supplies, a soft reference to room_layout; "" = none. At most one active
-		// location per room. No widget yet: the room picker comes with the stock screens.
+		{Name: "name", Type: input.Text(), Label: "Name", Row: model.RowTitle, NotNull: true, Permitted: model.Permitted{Letters: true, Numbers: true, Spaces: true, Tilde: true, Minimum: 1, Maximum: 100}},
+		// room_id es la sala (box) que esta ubicación abastece, una referencia suave a room_layout; "" = ninguna. A lo sumo una
+		// ubicación activa por sala. Aún no hay widget: el selector de sala vendrá con las pantallas de stock.
 		{Name: "room_id", Type: model.Text(), OmitEmpty: true},
 		{Name: "is_active", Type: input.Checkbox(), Label: "Active"},
 		{Name: "updated_at", Type: model.NanoTime(), OmitEmpty: true},
 	},
 }
 
-// SupplyBatchModel is one lot of one item (a supply with no lot uses NoBatchNumber). expiration_date is Unix seconds UTC, 0 = does not expire; unit_cost is whole pesos per unit, 0 = unknown.
+// SupplyBatchModel es un lote de un artículo (un insumo sin lote usa NoBatchNumber). expiration_date es segundos Unix UTC, 0 = no vence; unit_cost es pesos enteros por unidad, 0 = desconocido.
 var SupplyBatchModel = model.Definition{
 	Name: "supply_batch",
 	Fields: model.Fields{
@@ -65,8 +65,8 @@ var SupplyBatchModel = model.Definition{
 	},
 }
 
-// SupplyStockLevelModel is how much of one batch is in one location. One row per (location, batch); revision guards
-// concurrent updates.
+// SupplyStockLevelModel es cuánto de un lote hay en una ubicación. Una fila por (ubicación, lote); la revisión protege
+// contra actualizaciones concurrentes.
 var SupplyStockLevelModel = model.Definition{
 	Name: "supply_stock_level",
 	Fields: model.Fields{
@@ -80,8 +80,8 @@ var SupplyStockLevelModel = model.Definition{
 	},
 }
 
-// SupplyMovementModel is one append-only entry of the stock ledger. quantity is always > 0; the direction comes from
-// movement_type (webtyp.com/stock). There is no update and no delete: a mistake is corrected by a new movement.
+// SupplyMovementModel es una entrada de solo adición en el libro mayor de stock. quantity siempre es > 0; la dirección viene de
+// movement_type (webtyp.com/stock). No hay actualización ni borrado: un error se corrige con un nuevo movimiento.
 var SupplyMovementModel = model.Definition{
 	Name: "supply_movement",
 	Fields: model.Fields{
@@ -99,7 +99,7 @@ var SupplyMovementModel = model.Definition{
 	},
 }
 
-// Arguments of the operations. Each has tenant_id first, like service_catalog's.
+// Argumentos de las operaciones. Cada uno tiene tenant_id primero, como los de service_catalog.
 
 var ListItemsArgsModel = model.Definition{
 	Name: "list_items_args",
@@ -111,7 +111,7 @@ var ListItemsArgsModel = model.Definition{
 	},
 }
 
-// IdArgsModel is the argument of every operation that names one record: get, deactivate, delete (item, location).
+// IdArgsModel es el argumento de cada operación que nombra un registro: obtener, desactivar, borrar (artículo, ubicación).
 var IdArgsModel = model.Definition{
 	Name: "id_args",
 	Fields: model.Fields{
@@ -231,9 +231,9 @@ var ListLowStockArgsModel = model.Definition{
 	},
 }
 
-// Results that are not a table.
+// Resultados que no son una tabla.
 
-// ExpiringStockModel is one row of list_expiring: stock that expires within the asked days, or already expired.
+// ExpiringStockModel es una fila de list_expiring: stock que vence dentro de los días solicitados, o ya vencido.
 var ExpiringStockModel = model.Definition{
 	Name: "expiring_stock",
 	Fields: model.Fields{
@@ -248,7 +248,7 @@ var ExpiringStockModel = model.Definition{
 	},
 }
 
-// LowStockModel is one row of list_low_stock: an active item whose total is at or below its min_quantity.
+// LowStockModel es una fila de list_low_stock: un artículo activo cuyo total está en o por debajo de su min_quantity.
 var LowStockModel = model.Definition{
 	Name: "low_stock",
 	Fields: model.Fields{
