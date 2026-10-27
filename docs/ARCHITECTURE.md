@@ -1,36 +1,33 @@
-# Architecture
+# Arquitectura
 
-## Scope
+## Alcance
 
-`supply_manager` holds the clinic's clinical supplies (gloves, syringes, gauze…): what exists, the batches they come in (a supply may have no lot), where they are kept and every movement of stock. The pharmacy is a different module (`pharmacy_manager`); they share the rules in the library `webtyp.com/stock` but do not share tables or code, and neither imports the other.
+`supply_manager` contiene los insumos clínicos de la clínica (guantes, jeringas, gasas…): qué existe, los lotes en los que vienen (un insumo puede no tener lote), dónde se guardan y cada movimiento de stock. La farmacia es un módulo distinto (`pharmacy_manager`); comparten las reglas en la biblioteca `webtyp.com/stock` pero no comparten tablas ni código, y ninguno importa al otro.
 
-There is no stock screen in this version.
+No hay pantalla de stock en esta versión.
 
-## Entities and Rules
+## Entidades y Reglas
 
-- **All stock is held per batch.** The rules of stock (first expiry first out, expired lots, never negative, movement directions) are those of `webtyp.com/stock`; nothing in this module repeats them.
-- **A movement is append-only**: there is no update and no delete; a mistake is corrected by a new movement. Its `quantity` is always greater than zero; the direction comes from the movement type.
-- **Every stock change is one transaction** with an optimistic revision check on the stock level (`ErrConflict` when the row changed).
-- **Cost**: a batch has an optional `unit_cost` (whole pesos per unit, 0 = unknown). With `Deps.Publisher` and `Deps.MoneyScope` set, each output movement whose batch has a cost publishes one `money.Consumed` fact (cost × quantity, rounded half away from zero). A purchase is never a fact of this module.
-- **Events**: one `supply.movement.registered` per movement, after the commit.
-- **Alerts**: a `supply.below_minimum` alert is raised when an item's total stock crosses its minimum after an output. A summary `supply.expiring` alert is raised by the daily `ReviewExpiring` review when batches expire soon.
-- **Tenancy**: every query of a stock operation filters by `tenant_id`; the operations the generic view drives resolve the row by id and use the tenant the row stores.
-- Units: `PIECE`, `BOX`, `PAIR`, `ML`, `GRAM`. Supplies have **no price, no tax treatment and no sale flag**.
-- A batch's expiry is **optional** (0 = does not expire); a supply with no lot uses the batch number `NoBatchNumber` (`NO-BATCH`), passed explicitly.
-- Outputs accepted: `stock.InternalUse` (the use in a consultation) and `stock.AdjustOut` (a write-off); `stock.Sale` is `ErrMovementType`. An expired batch is never used (`ErrBatchExpired`); only a write-off may take expired stock. `min_quantity` (0 = no alert) feeds `ListLowStock`.
+- **Todo el stock se maneja por lote.** Las reglas de stock (primero en vencer primero en salir, lotes vencidos, nunca negativo, direcciones de movimiento) son las de `webtyp.com/stock`; nada en este módulo las repite.
+- **Un movimiento es de solo adición**: no hay actualización ni eliminación; un error se corrige con un nuevo movimiento. Su `quantity` siempre es mayor a cero; la dirección viene del tipo de movimiento.
+- **Cada cambio de stock es una transacción** con un control optimista de revisión sobre el nivel de stock (`ErrConflict` cuando la fila cambió).
+- **Costo**: un lote tiene un `unit_cost` opcional (pesos enteros por unidad, 0 = desconocido). Con `Deps.Publisher` y `Deps.MoneyScope` configurados, cada movimiento de salida cuyo lote tiene un costo publica un hecho `money.Consumed` (costo × cantidad, redondeado hacia afuera de cero). Una compra nunca es un hecho de este módulo.
+- **Eventos**: un `supply.movement.registered` por movimiento, después del commit.
+- **Alertas**: se emite una alerta `supply.below_minimum` cuando el stock total de un artículo cruza su mínimo tras una salida. El resumen `supply.expiring` lo emite la revisión diaria `ReviewExpiring` cuando los lotes vencen pronto.
+- **Multitenencia (Tenancy)**: toda consulta de una operación de stock filtra por `tenant_id`; las operaciones que maneja la vista genérica resuelven la fila por id y usan el tenant que la fila almacena.
+- Unidades: `PIECE`, `BOX`, `PAIR`, `ML`, `GRAM`. Los insumos **no tienen precio, ni tratamiento de impuestos ni marca de venta**.
+- El vencimiento de un lote es **opcional** (0 = no vence); un insumo sin lote usa el número de lote `NoBatchNumber` (`NO-BATCH`), pasado explícitamente.
+- Salidas aceptadas: `stock.InternalUse` (el uso en una consulta) y `stock.AdjustOut` (un ajuste/baja); `stock.Sale` da `ErrMovementType`. Un lote vencido nunca se usa (`ErrBatchExpired`); solo un ajuste puede tomar stock vencido. `min_quantity` (0 = sin alerta) alimenta `ListLowStock`.
 
+- **Salas (Rooms)**: una ubicación puede nombrar la sala (box) que abastece (`room_id`, una referencia suave a `room_layout`); a lo sumo una ubicación activa por sala y tenant (`ErrRoomTaken`). `UseInRoom` consume de esa ubicación; el selector de sala en el formulario de ubicación vendrá con las pantallas de stock.
 
-- **Rooms**: a location may name the room (box) it supplies (`room_id`, a soft reference to `room_layout`); at most one
-  active location per room and tenant (`ErrRoomTaken`). `UseInRoom` consumes from that location; the room picker in the
-  location form comes with the stock screens.
+## Dependencias
 
-## Dependencies
+Este módulo depende de:
+- `webtyp.com/stock` - Las reglas para el stock se definen aquí (FEFO, vencimiento, no stock negativo).
+- `webtyp.com/money` - Se usa para registrar hechos `money.Consumed` en los movimientos de salida.
 
-This module depends on:
-- `webtyp.com/stock` - Rules for stock are defined here (FEFO, expiry, no negative stock).
-- `webtyp.com/money` - Used for recording `money.Consumed` facts on output movements.
-
-## Composition Root Example
+## Ejemplo de Raíz de Composición (Composition Root)
 
 ```go
 m, err := supplymanager.New(db, supplymanager.Deps{
@@ -40,6 +37,6 @@ m, err := supplymanager.New(db, supplymanager.Deps{
 })
 ```
 
-## Generic View Operations
+## Operaciones de Vista Genérica
 
-Why `tenant_id` is absent from the operations the generic view drives: they resolve the row by id and use the tenant the row stores.
+Por qué `tenant_id` está ausente de las operaciones que maneja la vista genérica: resuelven la fila por id y usan el tenant que la fila almacena.
