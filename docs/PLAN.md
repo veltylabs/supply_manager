@@ -2,8 +2,10 @@
 PLAN: "feat!: list rows declared on the model fields (Row/Options); Item() removed"
 EXECUTOR: jules
 REVIEWER: none
-STATUS: running
+STATUS: review
 SESSION: 17602843766337239489
+PR: https://github.com/veltylabs/supply_manager/pull/6
+REVIEWED_COMMIT: ab0bf4cfccb1df18b9f67c5d9373e977aef9b760
 ---
 
 > Read AGENTS.md at the repo root before any change.
