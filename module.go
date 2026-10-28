@@ -180,7 +180,7 @@ func batchByNumber(db *orm.DB, tenantId, itemId, number string) (SupplyBatch, bo
 	return *got, true, nil
 }
 
-// levelAt is the stock level row of a batch in a location; found is false when the batch was never there.
+// levelAt is the stock level item of a batch in a location; found is false when the batch was never there.
 func levelAt(db *orm.DB, tenantId, locationId, batchId string) (SupplyStockLevel, bool, error) {
 	var l SupplyStockLevel
 	qb := db.Query(&l).Where(SupplyStockLevel_.LocationId).Eq(locationId).Where(SupplyStockLevel_.BatchId).Eq(batchId).Where(SupplyStockLevel_.TenantId).Eq(tenantId)
@@ -194,7 +194,7 @@ func levelAt(db *orm.DB, tenantId, locationId, batchId string) (SupplyStockLevel
 	return *got, true, nil
 }
 
-// levelOrCreate returns the level row of a batch in a location, creating it at quantity 0 and revision 0.
+// levelOrCreate returns the level item of a batch in a location, creating it at quantity 0 and revision 0.
 func (m *Module) levelOrCreate(tx *orm.DB, tenantId, locationId, batchId string, now time.Nano) (SupplyStockLevel, error) {
 	level, found, err := levelAt(tx, tenantId, locationId, batchId)
 	if err != nil {
@@ -211,7 +211,7 @@ func (m *Module) levelOrCreate(tx *orm.DB, tenantId, locationId, batchId string,
 }
 
 // applyToLevel changes the quantity of a stock level by `quantity` in direction d, guarded by the revision the caller
-// read: if the row changed since (expectedRevision differs from the stored one) it is ErrConflict and nothing is
+// read: if the item changed since (expectedRevision differs from the stored one) it is ErrConflict and nothing is
 // written. stock.Apply keeps the quantity from going negative (ErrInsufficientStock).
 func applyToLevel(tx *orm.DB, level *SupplyStockLevel, expectedRevision int64, d stock.Direction, quantity float64, now time.Nano) error {
 	var current SupplyStockLevel
@@ -253,7 +253,7 @@ func (m *Module) addMovement(tx *orm.DB, tenantId, batchId, locationId string, t
 }
 
 // lotsAt turns the stock of an item in a location into the lots webtyp.com/stock allocates from: one Lot per batch
-// that has a level row there, with the batch's expiry and the level's quantity.
+// that has a level item there, with the batch's expiry and the level's quantity.
 func lotsAt(db *orm.DB, tenantId, itemId, locationId string) ([]stock.Lot, error) {
 	var proxy SupplyBatch
 	batches, err := ReadAllSupplyBatch(db.Query(&proxy).Where(SupplyBatch_.ItemId).Eq(itemId).Where(SupplyBatch_.TenantId).Eq(tenantId))

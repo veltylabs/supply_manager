@@ -62,6 +62,10 @@ func (m *SupplyItem) Validate(action byte) error {
 	return model.ValidateFields(action, m)
 }
 
+func (m *SupplyItem) Item() model.Item {
+	return model.Item{ID: m.Id, Label: m.Name, Description: m.Sku}
+}
+
 var SupplyItem_ = struct {
 	Id string
 	TenantId string
@@ -145,6 +149,10 @@ func (s *SupplyLocationList) DecodeFields(_ model.FieldReader) {}
 
 func (m *SupplyLocation) Validate(action byte) error {
 	return model.ValidateFields(action, m)
+}
+
+func (m *SupplyLocation) Item() model.Item {
+	return model.Item{ID: m.Id, Label: m.Name}
 }
 
 var SupplyLocation_ = struct {

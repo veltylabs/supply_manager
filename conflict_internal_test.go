@@ -45,7 +45,7 @@ func TestApplyToLevel_StaleRevisionIsAConflict(t *testing.T) {
 	level := stocks[0]
 	read := level.Revision // what a concurrent writer read
 
-	// somebody else changes the row first: the revision moves on
+	// somebody else changes the item first: the revision moves on
 	err = m.db.Tx(func(tx *orm.DB) error { return applyToLevel(tx, &level, read, stock.In, 1, time.NowNano()) })
 	if err != nil {
 		t.Fatalf("the first writer must succeed: %v", err)
