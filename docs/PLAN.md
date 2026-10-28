@@ -77,3 +77,6 @@ with the new names (`Item: model.ItemLabel`…, «`Item()` lo genera ormc»).
 | 2 | `*.go`, `tests/*` | `Item()`, `model.Item` |
 | 3 | `tests/*` | generated item asserted |
 | 4 | comments, docs | new names |
+
+## Executor notes
+The command `ormc` was manually run using `~/go/bin/ormc` due to path resolution issues.

@@ -10,7 +10,7 @@ require (
 	webtyp.com/html v0.0.30
 	webtyp.com/input v0.0.21
 	webtyp.com/lang v0.1.10
-	webtyp.com/model v0.2.7
+	webtyp.com/model v0.2.9
 	webtyp.com/money v0.2.0
 	webtyp.com/msgtype v0.1.0
 	webtyp.com/notify v0.2.2
@@ -21,7 +21,7 @@ require (
 	webtyp.com/svg v0.3.30
 	webtyp.com/time v0.6.2
 	webtyp.com/unixid v0.3.1
-	webtyp.com/view v0.6.47
+	webtyp.com/view v0.6.48
 )
 
 require (

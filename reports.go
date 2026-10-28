@@ -82,15 +82,15 @@ func (m *Module) ListLowStock(a ListLowStockArgs) ([]LowStock, error) {
 // ReviewExpiring raises one alert when batches with stock are expired or expire within withinDays,
 // and returns them. The application calls it once a day; this module has no scheduler.
 func (m *Module) ReviewExpiring(tenantId string, withinDays int) ([]ExpiringStock, error) {
-	rows, err := m.ListExpiring(ListExpiringArgs{TenantId: tenantId, WithinDays: int64(withinDays)})
+	items, err := m.ListExpiring(ListExpiringArgs{TenantId: tenantId, WithinDays: int64(withinDays)})
 
-	if len(rows) == 0 {
-		return rows, err
+	if len(items) == 0 {
+		return items, err
 	}
 
 	var expired, soon int
-	for _, row := range rows {
-		if row.Expired {
+	for _, item := range items {
+		if item.Expired {
 			expired++
 		} else {
 			soon++
@@ -106,10 +106,10 @@ func (m *Module) ReviewExpiring(tenantId string, withinDays int) ([]ExpiringStoc
 	})
 
 	if alertErr != nil {
-		return rows, alertErr
+		return items, alertErr
 	}
 
-	return rows, err
+	return items, err
 }
 
 // ItemExists tells whether an item exists in the tenant and is active. Other modules declare the same method in a

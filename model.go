@@ -26,8 +26,8 @@ var SupplyItemModel = model.Definition{
 	Fields: model.Fields{
 		{Name: "id", Type: model.Text(), DB: &model.FieldDB{PK: true}, OmitEmpty: true},
 		{Name: "tenant_id", Type: model.Text(), NotNull: true},
-		{Name: "sku", Type: input.Text(), Label: "SKU", Row: model.RowDetail, NotNull: true, Permitted: model.Permitted{Letters: true, Numbers: true, Extra: []rune{'-'}, Minimum: 1, Maximum: 50}},
-		{Name: "name", Type: input.Text(), Label: "Name", Row: model.RowTitle, NotNull: true, Permitted: model.Permitted{Letters: true, Numbers: true, Spaces: true, Tilde: true, Extra: []rune{'.', ',', '(', ')', '-', '/', '%', '+'}, Minimum: 1, Maximum: 255}},
+		{Name: "sku", Type: input.Text(), Label: "SKU", Item: model.ItemDescription, NotNull: true, Permitted: model.Permitted{Letters: true, Numbers: true, Extra: []rune{'-'}, Minimum: 1, Maximum: 50}},
+		{Name: "name", Type: input.Text(), Label: "Name", Item: model.ItemLabel, NotNull: true, Permitted: model.Permitted{Letters: true, Numbers: true, Spaces: true, Tilde: true, Extra: []rune{'.', ',', '(', ')', '-', '/', '%', '+'}, Minimum: 1, Maximum: 255}},
 		{Name: "unit", Type: input.Select(), Label: "Unit", NotNull: true},
 		{Name: "min_quantity", Type: input.Decimal(), Label: "Minimum quantity", OmitEmpty: true},
 		{Name: "is_active", Type: input.Checkbox(), Label: "Active"},
@@ -41,7 +41,7 @@ var SupplyLocationModel = model.Definition{
 	Fields: model.Fields{
 		{Name: "id", Type: model.Text(), DB: &model.FieldDB{PK: true}, OmitEmpty: true},
 		{Name: "tenant_id", Type: model.Text(), NotNull: true},
-		{Name: "name", Type: input.Text(), Label: "Name", Row: model.RowTitle, NotNull: true, Permitted: model.Permitted{Letters: true, Numbers: true, Spaces: true, Tilde: true, Minimum: 1, Maximum: 100}},
+		{Name: "name", Type: input.Text(), Label: "Name", Item: model.ItemLabel, NotNull: true, Permitted: model.Permitted{Letters: true, Numbers: true, Spaces: true, Tilde: true, Minimum: 1, Maximum: 100}},
 		// room_id es la sala (box) que esta ubicación abastece, una referencia suave a room_layout; "" = ninguna. A lo sumo una
 		// ubicación activa por sala. Aún no hay widget: el selector de sala vendrá con las pantallas de stock.
 		{Name: "room_id", Type: model.Text(), OmitEmpty: true},

@@ -47,7 +47,7 @@ func TestOperations_ThroughTheCaller(t *testing.T) {
 
 	var levels supplymanager.SupplyStockLevelList
 	if err := call(t, c, supplymanager.OpListStock, &supplymanager.ListStockArgs{TenantId: testTenant}, &levels); err != nil || len(levels) != 1 || levels[0].Quantity != 10 {
-		t.Fatalf("list_stock: %v, %d rows", err, len(levels))
+		t.Fatalf("list_stock: %v, %d items", err, len(levels))
 	}
 
 	out := output(prod.Id, loc.Id, stock.InternalUse, 4)

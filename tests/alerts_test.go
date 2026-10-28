@@ -135,13 +135,13 @@ func TestAlerts(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		rows, err := m.ReviewExpiring(testTenant, 30)
+		items, err := m.ReviewExpiring(testTenant, 30)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if len(rows) != 2 {
-			t.Fatalf("expected 2 expiring rows, got %d", len(rows))
+		if len(items) != 2 {
+			t.Fatalf("expected 2 expiring items, got %d", len(items))
 		}
 
 		if len(alerts) != 1 {
@@ -162,12 +162,12 @@ func TestAlerts(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		rows2, err := m2.ReviewExpiring(testTenant, 30)
+		items2, err := m2.ReviewExpiring(testTenant, 30)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if len(rows2) != 0 {
-			t.Fatalf("expected 0 rows, got %d", len(rows2))
+		if len(items2) != 0 {
+			t.Fatalf("expected 0 items, got %d", len(items2))
 		}
 
 		// Number of alerts should remain 1

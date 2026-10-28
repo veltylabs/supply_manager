@@ -7,8 +7,8 @@ import (
 )
 
 // The operations that the generic view drives (save, update by ids and fields, delete by ids) carry no tenant on the wire:
-// the records carry theirs, and an id alone names one row, so these helpers resolve a row by id and then work with the
-// tenant the row itself stores. Everything that takes a tenant argument elsewhere in this module filters by it.
+// the records carry theirs, and an id alone names one item, so these helpers resolve an item by id and then work with the
+// tenant the item itself stores. Everything that takes a tenant argument elsewhere in this module filters by it.
 
 // itemByID returns an item whatever its tenant, so that an operation sent by id alone can find its tenant.
 func (m *Module) itemByID(id string) (SupplyItem, error) {
@@ -204,7 +204,7 @@ func (m *Module) PatchLocations(ids, fields []string, rec SupplyLocation) error 
 	return nil
 }
 
-// DeleteLocations removes locations by id, each only if no stock level row references it (ErrLocationInUse).
+// DeleteLocations removes locations by id, each only if no stock level item references it (ErrLocationInUse).
 func (m *Module) DeleteLocations(ids []string) error {
 	for _, id := range ids {
 		l, err := m.locationByID(id)

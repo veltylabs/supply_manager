@@ -1,4 +1,4 @@
-// Package seed loads demo data through the module's own methods, so every row is validated like a real one.
+// Package seed loads demo data through the module's own methods, so every item is validated like a real one.
 package seed
 
 import (
