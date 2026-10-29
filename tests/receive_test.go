@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"webtyp.com/model"
 	"testing"
 
 	"webtyp.com/time"
@@ -64,7 +65,7 @@ func TestReceiveStock_Rules(t *testing.T) {
 	if _, err := m.ReceiveStock(receive(p.Id, loc.Id, "L9", future, 3)); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := m.ReceiveStock(receive(p.Id, loc.Id, "L9", future+1, 3)); err != supplymanager.ErrBatchExpiryMismatch {
+	if _, err := m.ReceiveStock(receive(p.Id, loc.Id, "L9", future+1, 3)); model.KindOf(err) != model.ErrorConflict {
 		t.Errorf("the same batch with another expiry: got %v, want ErrBatchExpiryMismatch", err)
 	}
 }

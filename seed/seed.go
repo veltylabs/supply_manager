@@ -12,9 +12,8 @@ type Data struct {
 	Locations []supplymanager.SupplyLocation
 	Items     []supplymanager.SupplyItem
 }
+
 const (
-
-
 	locStore = "Bodega"
 	locRoom  = "Box 1"
 

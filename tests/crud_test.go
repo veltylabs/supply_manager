@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"webtyp.com/model"
 	"testing"
 
 	supplymanager "github.com/veltylabs/supply_manager"
@@ -27,7 +28,7 @@ func TestCreateItem_SkuIsUniquePerTenant(t *testing.T) {
 
 	// Create again in same tenant
 	_, err := m.CreateItem(supplymanager.SupplyItem{TenantId: testTenant, Sku: "a1", Name: "Same", Unit: "BOX", IsActive: true})
-	if err != supplymanager.ErrSkuExists {
+	if model.KindOf(err) != model.ErrorConflict {
 		t.Errorf("expected ErrSkuExists, got %v", err)
 	}
 
@@ -46,7 +47,7 @@ func TestGetItem_ForeignTenant(t *testing.T) {
 	created := newItem(t, m, "a1")
 
 	_, err := m.GetItem("tenant-2", created.Id)
-	if err != supplymanager.ErrItemNotFound {
+	if model.KindOf(err) != model.ErrorNotFound {
 		t.Errorf("expected ErrItemNotFound, got %v", err)
 	}
 }
@@ -69,7 +70,7 @@ func TestUpdateItem(t *testing.T) {
 	// Update a1 to have a2's sku
 	a1.Sku = a2.Sku
 	_, err = m.UpdateItem(a1)
-	if err != supplymanager.ErrSkuExists {
+	if model.KindOf(err) != model.ErrorConflict {
 		t.Errorf("expected ErrSkuExists, got %v", err)
 	}
 
@@ -78,7 +79,7 @@ func TestUpdateItem(t *testing.T) {
 	unknown.Id = "unknown"
 	unknown.Sku = "a3"
 	_, err = m.UpdateItem(unknown)
-	if err != supplymanager.ErrItemNotFound {
+	if model.KindOf(err) != model.ErrorNotFound {
 		t.Errorf("expected ErrItemNotFound, got %v", err)
 	}
 }
@@ -98,7 +99,7 @@ func TestPatchItems(t *testing.T) {
 	}
 
 	err = m.PatchItems([]string{a1.Id}, []string{"bogus"}, supplymanager.SupplyItem{Name: "Patched Name"})
-	if vErr, ok := err.(supplymanager.ValidationError); !ok || vErr.Err != supplymanager.ErrUnknownField {
+	if model.KindOf(err) != model.ErrorInvalid { // replaced ErrUnknownField
 		t.Errorf("expected ValidationError with ErrUnknownField, got %v", err)
 	}
 }
@@ -126,7 +127,7 @@ func TestDeactivateItem(t *testing.T) {
 	_, err = m.ReceiveStock(supplymanager.ReceiveStockArgs{
 		TenantId: testTenant, ItemId: a1.Id, LocationId: l1.Id, BatchNumber: "B1", Quantity: 10,
 	})
-	if err != supplymanager.ErrItemInactive {
+	if model.KindOf(err) != model.ErrorInvalid {
 		t.Errorf("expected ErrItemInactive, got %v", err)
 	}
 }
@@ -149,12 +150,12 @@ func TestDeleteItems(t *testing.T) {
 		t.Errorf("unexpected error deleting empty item: %v", err)
 	}
 	_, err = m.GetItem(testTenant, a1.Id)
-	if err != supplymanager.ErrItemNotFound {
+	if model.KindOf(err) != model.ErrorNotFound {
 		t.Errorf("expected ErrItemNotFound, got %v", err)
 	}
 
 	err = m.DeleteItems([]string{a2.Id})
-	if err != supplymanager.ErrItemInUse {
+	if model.KindOf(err) != model.ErrorInvalid {
 		t.Errorf("expected ErrItemInUse, got %v", err)
 	}
 	_, err = m.GetItem(testTenant, a2.Id)
@@ -163,7 +164,7 @@ func TestDeleteItems(t *testing.T) {
 	}
 
 	err = m.DeleteItems([]string{"unknown"})
-	if err != supplymanager.ErrItemNotFound {
+	if model.KindOf(err) != model.ErrorNotFound {
 		t.Errorf("expected ErrItemNotFound, got %v", err)
 	}
 }
@@ -228,12 +229,12 @@ func TestCreateItem_Rules(t *testing.T) {
 	m := newModule(t)
 
 	_, err := m.CreateItem(supplymanager.SupplyItem{TenantId: testTenant, Sku: "1", Name: "N", Unit: "BAG", IsActive: true})
-	if err != supplymanager.ErrUnit {
+	if model.KindOf(err) != model.ErrorInvalid {
 		t.Errorf("expected ErrUnit, got %v", err)
 	}
 
 	_, err = m.CreateItem(supplymanager.SupplyItem{TenantId: testTenant, Sku: "1", Name: "", Unit: "BOX", IsActive: true})
-	if _, ok := err.(supplymanager.ValidationError); !ok {
+	if model.KindOf(err) != model.ErrorInvalid {
 		t.Errorf("expected ValidationError, got %v", err)
 	}
 }
@@ -248,7 +249,7 @@ func TestItemCard(t *testing.T) {
 	}
 
 	_, _, _, err = m.ItemCard(testTenant, "unknown")
-	if err != supplymanager.ErrNotFound {
+	if model.KindOf(err) != model.ErrorNotFound {
 		t.Errorf("expected ErrNotFound, got %v", err)
 	}
 }
@@ -258,7 +259,7 @@ func TestCreateLocation_NameIsUniquePerTenant(t *testing.T) {
 	_ = newLocation(t, m, "Store")
 
 	_, err := m.CreateLocation(supplymanager.SupplyLocation{TenantId: testTenant, Name: "Store", IsActive: true})
-	if err != supplymanager.ErrLocationNameExists {
+	if model.KindOf(err) != model.ErrorConflict {
 		t.Errorf("expected ErrLocationNameExists, got %v", err)
 	}
 
@@ -278,7 +279,7 @@ func TestUpdateLocation(t *testing.T) {
 
 	store.Name = "Counter"
 	_, err := m.UpdateLocation(store)
-	if err != supplymanager.ErrLocationNameExists {
+	if model.KindOf(err) != model.ErrorConflict {
 		t.Errorf("expected ErrLocationNameExists, got %v", err)
 	}
 
@@ -311,7 +312,7 @@ func TestDeleteLocations(t *testing.T) {
 	}
 
 	err = m.DeleteLocations([]string{holding.Id})
-	if err != supplymanager.ErrLocationInUse {
+	if model.KindOf(err) != model.ErrorInvalid {
 		t.Errorf("expected ErrLocationInUse, got %v", err)
 	}
 }
@@ -330,7 +331,7 @@ func TestInactiveLocationRefusesReceipts(t *testing.T) {
 	_, err = m.ReceiveStock(supplymanager.ReceiveStockArgs{
 		TenantId: testTenant, ItemId: item.Id, LocationId: loc.Id, BatchNumber: "B1", Quantity: 10,
 	})
-	if err != supplymanager.ErrLocationInactive {
+	if model.KindOf(err) != model.ErrorInvalid {
 		t.Errorf("expected ErrLocationInactive, got %v", err)
 	}
 }

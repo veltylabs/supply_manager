@@ -3,6 +3,7 @@
 package supplymanager
 
 import (
+	"webtyp.com/model"
 	"testing"
 
 	"webtyp.com/events/mock"
@@ -54,7 +55,7 @@ func TestApplyToLevel_StaleRevisionIsAConflict(t *testing.T) {
 	// the second writer still holds the old revision
 	stale := level
 	err = m.db.Tx(func(tx *orm.DB) error { return applyToLevel(tx, &stale, read, stock.In, 1, time.NowNano()) })
-	if err != ErrConflict {
+	if model.KindOf(err) != model.ErrorConflict {
 		t.Errorf("a stale revision: got %v, want ErrConflict", err)
 	}
 	after, _ := m.ListStock(ListStockArgs{TenantId: tenant})

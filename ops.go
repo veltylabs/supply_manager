@@ -3,6 +3,7 @@ package supplymanager
 import (
 	"webtyp.com/model"
 	"webtyp.com/router"
+	"webtyp.com/rpc"
 )
 
 // Operation names, as the transport and the view see them: "<ModelName>.<name>".
@@ -192,18 +193,18 @@ var _ router.OperationModule = (*Module)(nil)
 // answer encodes v, or answers the failure.
 func answer(ctx router.Context, v model.Encodable, err error) {
 	if err != nil {
-		writeError(ctx, err)
+		rpc.WriteError(ctx, err)
 		return
 	}
 	if err := ctx.Encode(v); err != nil {
-		writeError(ctx, err)
+		rpc.WriteError(ctx, err)
 	}
 }
 
 func (m *Module) opListItems(ctx router.Context) {
 	var args ListItemsArgs
 	if err := ctx.Decode(&args); err != nil {
-		writeError(ctx, decodeError{err})
+		rpc.WriteError(ctx, ErrCannotRead)
 		return
 	}
 	items, err := m.ListItems(args)
@@ -217,7 +218,7 @@ func (m *Module) opListItems(ctx router.Context) {
 func (m *Module) opGetItem(ctx router.Context) {
 	var args IdArgs
 	if err := ctx.Decode(&args); err != nil {
-		writeError(ctx, decodeError{err})
+		rpc.WriteError(ctx, ErrCannotRead)
 		return
 	}
 	p, err := m.GetItem(args.TenantId, args.Id)
@@ -227,7 +228,7 @@ func (m *Module) opGetItem(ctx router.Context) {
 func (m *Module) opCreateItem(ctx router.Context) {
 	var p SupplyItem
 	if err := ctx.Decode(&p); err != nil {
-		writeError(ctx, decodeError{err})
+		rpc.WriteError(ctx, ErrCannotRead)
 		return
 	}
 	out, err := m.CreateItem(p)
@@ -237,35 +238,35 @@ func (m *Module) opCreateItem(ctx router.Context) {
 func (m *Module) opUpdateItem(ctx router.Context) {
 	var args UpdateItemArgs
 	if err := ctx.Decode(&args); err != nil {
-		writeError(ctx, decodeError{err})
+		rpc.WriteError(ctx, ErrCannotRead)
 		return
 	}
 	if len(args.Ids) == 0 {
-		writeError(ctx, ErrNoIds)
+		rpc.WriteError(ctx, ErrNoIds)
 		return
 	}
 	if err := m.PatchItems(args.Ids, args.Fields, args.Record); err != nil {
-		writeError(ctx, err)
+		rpc.WriteError(ctx, err)
 		return
 	}
-	ctx.WriteStatus(200)
+
 }
 
 func (m *Module) opUpsertItem(ctx router.Context) {
 	var args UpsertItemArgs
 	if err := ctx.Decode(&args); err != nil {
-		writeError(ctx, decodeError{err})
+		rpc.WriteError(ctx, ErrCannotRead)
 		return
 	}
 	if len(args.Records) == 0 {
-		writeError(ctx, ErrNoRecords)
+		rpc.WriteError(ctx, ErrNoRecords)
 		return
 	}
 	var last SupplyItem
 	for _, rec := range args.Records {
 		out, err := m.UpsertItem(rec)
 		if err != nil {
-			writeError(ctx, err)
+			rpc.WriteError(ctx, err)
 			return
 		}
 		last = out
@@ -276,37 +277,37 @@ func (m *Module) opUpsertItem(ctx router.Context) {
 func (m *Module) opDeactivateItem(ctx router.Context) {
 	var args IdArgs
 	if err := ctx.Decode(&args); err != nil {
-		writeError(ctx, decodeError{err})
+		rpc.WriteError(ctx, ErrCannotRead)
 		return
 	}
 	if err := m.DeactivateItem(args.TenantId, args.Id); err != nil {
-		writeError(ctx, err)
+		rpc.WriteError(ctx, err)
 		return
 	}
-	ctx.WriteStatus(200)
+
 }
 
 func (m *Module) opDeleteItem(ctx router.Context) {
 	var args DeleteIdsArgs
 	if err := ctx.Decode(&args); err != nil {
-		writeError(ctx, decodeError{err})
+		rpc.WriteError(ctx, ErrCannotRead)
 		return
 	}
 	if len(args.Ids) == 0 {
-		writeError(ctx, ErrNoIds)
+		rpc.WriteError(ctx, ErrNoIds)
 		return
 	}
 	if err := m.DeleteItems(args.Ids); err != nil {
-		writeError(ctx, err)
+		rpc.WriteError(ctx, err)
 		return
 	}
-	ctx.WriteStatus(200)
+
 }
 
 func (m *Module) opListLocations(ctx router.Context) {
 	var args ListLocationsArgs
 	if err := ctx.Decode(&args); err != nil {
-		writeError(ctx, decodeError{err})
+		rpc.WriteError(ctx, ErrCannotRead)
 		return
 	}
 	items, err := m.ListLocations(args)
@@ -320,18 +321,18 @@ func (m *Module) opListLocations(ctx router.Context) {
 func (m *Module) opUpsertLocation(ctx router.Context) {
 	var args UpsertLocationArgs
 	if err := ctx.Decode(&args); err != nil {
-		writeError(ctx, decodeError{err})
+		rpc.WriteError(ctx, ErrCannotRead)
 		return
 	}
 	if len(args.Records) == 0 {
-		writeError(ctx, ErrNoRecords)
+		rpc.WriteError(ctx, ErrNoRecords)
 		return
 	}
 	var last SupplyLocation
 	for _, rec := range args.Records {
 		out, err := m.UpsertLocation(rec)
 		if err != nil {
-			writeError(ctx, err)
+			rpc.WriteError(ctx, err)
 			return
 		}
 		last = out
@@ -342,41 +343,41 @@ func (m *Module) opUpsertLocation(ctx router.Context) {
 func (m *Module) opUpdateLocation(ctx router.Context) {
 	var args UpdateLocationArgs
 	if err := ctx.Decode(&args); err != nil {
-		writeError(ctx, decodeError{err})
+		rpc.WriteError(ctx, ErrCannotRead)
 		return
 	}
 	if len(args.Ids) == 0 {
-		writeError(ctx, ErrNoIds)
+		rpc.WriteError(ctx, ErrNoIds)
 		return
 	}
 	if err := m.PatchLocations(args.Ids, args.Fields, args.Record); err != nil {
-		writeError(ctx, err)
+		rpc.WriteError(ctx, err)
 		return
 	}
-	ctx.WriteStatus(200)
+
 }
 
 func (m *Module) opDeleteLocation(ctx router.Context) {
 	var args DeleteIdsArgs
 	if err := ctx.Decode(&args); err != nil {
-		writeError(ctx, decodeError{err})
+		rpc.WriteError(ctx, ErrCannotRead)
 		return
 	}
 	if len(args.Ids) == 0 {
-		writeError(ctx, ErrNoIds)
+		rpc.WriteError(ctx, ErrNoIds)
 		return
 	}
 	if err := m.DeleteLocations(args.Ids); err != nil {
-		writeError(ctx, err)
+		rpc.WriteError(ctx, err)
 		return
 	}
-	ctx.WriteStatus(200)
+
 }
 
 func (m *Module) opListBatches(ctx router.Context) {
 	var args ListBatchesArgs
 	if err := ctx.Decode(&args); err != nil {
-		writeError(ctx, decodeError{err})
+		rpc.WriteError(ctx, ErrCannotRead)
 		return
 	}
 	items, err := m.ListBatches(args.TenantId, args.ItemId)
@@ -390,7 +391,7 @@ func (m *Module) opListBatches(ctx router.Context) {
 func (m *Module) opReceiveStock(ctx router.Context) {
 	var args ReceiveStockArgs
 	if err := ctx.Decode(&args); err != nil {
-		writeError(ctx, decodeError{err})
+		rpc.WriteError(ctx, ErrCannotRead)
 		return
 	}
 	mv, err := m.ReceiveStock(args)
@@ -400,7 +401,7 @@ func (m *Module) opReceiveStock(ctx router.Context) {
 func (m *Module) opRegisterEntry(ctx router.Context) {
 	var args RegisterEntryArgs
 	if err := ctx.Decode(&args); err != nil {
-		writeError(ctx, decodeError{err})
+		rpc.WriteError(ctx, ErrCannotRead)
 		return
 	}
 	mv, err := m.RegisterEntry(args)
@@ -418,7 +419,7 @@ func movementList(items []SupplyMovement) SupplyMovementList {
 func (m *Module) opRegisterOutput(ctx router.Context) {
 	var args RegisterOutputArgs
 	if err := ctx.Decode(&args); err != nil {
-		writeError(ctx, decodeError{err})
+		rpc.WriteError(ctx, ErrCannotRead)
 		return
 	}
 	items, err := m.RegisterOutput(args)
@@ -429,7 +430,7 @@ func (m *Module) opRegisterOutput(ctx router.Context) {
 func (m *Module) opTransferStock(ctx router.Context) {
 	var args TransferStockArgs
 	if err := ctx.Decode(&args); err != nil {
-		writeError(ctx, decodeError{err})
+		rpc.WriteError(ctx, ErrCannotRead)
 		return
 	}
 	items, err := m.TransferStock(args)
@@ -440,7 +441,7 @@ func (m *Module) opTransferStock(ctx router.Context) {
 func (m *Module) opListStock(ctx router.Context) {
 	var args ListStockArgs
 	if err := ctx.Decode(&args); err != nil {
-		writeError(ctx, decodeError{err})
+		rpc.WriteError(ctx, ErrCannotRead)
 		return
 	}
 	items, err := m.ListStock(args)
@@ -454,7 +455,7 @@ func (m *Module) opListStock(ctx router.Context) {
 func (m *Module) opListMovements(ctx router.Context) {
 	var args ListMovementsArgs
 	if err := ctx.Decode(&args); err != nil {
-		writeError(ctx, decodeError{err})
+		rpc.WriteError(ctx, ErrCannotRead)
 		return
 	}
 	items, err := m.ListMovements(args)
@@ -465,7 +466,7 @@ func (m *Module) opListMovements(ctx router.Context) {
 func (m *Module) opListExpiring(ctx router.Context) {
 	var args ListExpiringArgs
 	if err := ctx.Decode(&args); err != nil {
-		writeError(ctx, decodeError{err})
+		rpc.WriteError(ctx, ErrCannotRead)
 		return
 	}
 	items, err := m.ListExpiring(args)
@@ -479,7 +480,7 @@ func (m *Module) opListExpiring(ctx router.Context) {
 func (m *Module) opListLowStock(ctx router.Context) {
 	var args ListLowStockArgs
 	if err := ctx.Decode(&args); err != nil {
-		writeError(ctx, decodeError{err})
+		rpc.WriteError(ctx, ErrCannotRead)
 		return
 	}
 	items, err := m.ListLowStock(args)

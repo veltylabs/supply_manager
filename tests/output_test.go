@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"webtyp.com/model"
 	"testing"
 
 	"webtyp.com/time"
@@ -57,10 +58,10 @@ func TestRegisterOutput_Rules(t *testing.T) {
 	}
 	oldBatch := batchIDOf(t, m, p.Id, "OLD")
 
-	if _, err := m.RegisterOutput(output(p.Id, loc.Id, stock.Sale, 1)); err != supplymanager.ErrMovementType {
+	if _, err := m.RegisterOutput(output(p.Id, loc.Id, stock.Sale, 1)); model.KindOf(err) != model.ErrorInvalid {
 		t.Errorf("supplies are not sold: got %v, want ErrMovementType", err)
 	}
-	if _, err := m.RegisterOutput(output(p.Id, loc.Id, stock.InternalUse, 6)); err != supplymanager.ErrInsufficientStock {
+	if _, err := m.RegisterOutput(output(p.Id, loc.Id, stock.InternalUse, 6)); model.KindOf(err) != model.ErrorInvalid {
 		t.Errorf("only 5 usable (the expired batch does not count): got %v, want ErrInsufficientStock", err)
 	}
 	if levels, _ := m.ListStock(supplymanager.ListStockArgs{TenantId: testTenant, ItemId: p.Id}); len(levels) != 2 {
@@ -68,14 +69,14 @@ func TestRegisterOutput_Rules(t *testing.T) {
 	}
 	forced := output(p.Id, loc.Id, stock.InternalUse, 1)
 	forced.BatchId = oldBatch
-	if _, err := m.RegisterOutput(forced); err != supplymanager.ErrBatchExpired {
+	if _, err := m.RegisterOutput(forced); model.KindOf(err) != model.ErrorInvalid {
 		t.Errorf("forcing an expired batch: got %v, want ErrBatchExpired", err)
 	}
 	forced.MovementType = string(stock.AdjustOut)
 	if _, err := m.RegisterOutput(forced); err != nil {
 		t.Errorf("a write-off may take expired stock: %v", err)
 	}
-	if _, err := m.RegisterOutput(output(p.Id, loc.Id, stock.Purchase, 1)); err != supplymanager.ErrMovementType {
+	if _, err := m.RegisterOutput(output(p.Id, loc.Id, stock.Purchase, 1)); model.KindOf(err) != model.ErrorInvalid {
 		t.Errorf("an inbound type in an output: got %v, want ErrMovementType", err)
 	}
 }

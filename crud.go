@@ -46,7 +46,7 @@ func (m *Module) UpdateItem(p SupplyItem) (SupplyItem, error) {
 		return SupplyItem{}, err
 	}
 	if err := p.Validate(model.ActionUpdate); err != nil {
-		return SupplyItem{}, ValidationError{Err: err}
+		return SupplyItem{}, err
 	}
 	if p.Sku != existing.Sku {
 		if _, found, err := m.itemBySKU(m.db, p.TenantId, p.Sku); err != nil {
@@ -66,7 +66,7 @@ func (m *Module) UpsertItem(p SupplyItem) (SupplyItem, error) {
 	if p.Id == "" {
 		return m.CreateItem(p)
 	}
-	if _, err := getItem(m.db, p.TenantId, p.Id); err == ErrItemNotFound {
+	if _, err := getItem(m.db, p.TenantId, p.Id); model.KindOf(err) == model.ErrorNotFound {
 		return m.CreateItem(p)
 	} else if err != nil {
 		return SupplyItem{}, err
@@ -95,7 +95,7 @@ func (m *Module) PatchItems(ids, fields []string, rec SupplyItem) error {
 			case "is_active":
 				current.IsActive = rec.IsActive
 			default:
-				return ValidationError{Err: ErrUnknownField}
+				return &model.FieldError{Field: f, Err: ErrUnknownField}
 			}
 		}
 		if _, err := m.UpdateItem(current); err != nil {
@@ -145,7 +145,7 @@ func (m *Module) UpdateLocation(l SupplyLocation) (SupplyLocation, error) {
 	}
 	l.UpdatedAt = time.NowNano()
 	if err := l.Validate(model.ActionUpdate); err != nil {
-		return SupplyLocation{}, ValidationError{Err: err}
+		return SupplyLocation{}, err
 	}
 	if l.Name != existing.Name {
 		var proxy SupplyLocation
@@ -170,7 +170,7 @@ func (m *Module) UpsertLocation(l SupplyLocation) (SupplyLocation, error) {
 	if l.Id == "" {
 		return m.CreateLocation(l)
 	}
-	if _, err := getLocation(m.db, l.TenantId, l.Id); err == ErrLocationNotFound {
+	if _, err := getLocation(m.db, l.TenantId, l.Id); model.KindOf(err) == model.ErrorNotFound {
 		return m.CreateLocation(l)
 	} else if err != nil {
 		return SupplyLocation{}, err
@@ -194,7 +194,7 @@ func (m *Module) PatchLocations(ids, fields []string, rec SupplyLocation) error 
 			case "is_active":
 				current.IsActive = rec.IsActive
 			default:
-				return ValidationError{Err: ErrUnknownField}
+				return &model.FieldError{Field: f, Err: ErrUnknownField}
 			}
 		}
 		if _, err := m.UpdateLocation(current); err != nil {

@@ -14,8 +14,8 @@ const (
 
 // Source types of the alerts (notify.Ref.Type).
 const (
-	alertSourceItem    = "supply_item"
-	alertSourceReview  = "supply_expiry_review"
+	alertSourceItem   = "supply_item"
+	alertSourceReview = "supply_expiry_review"
 )
 
 const (

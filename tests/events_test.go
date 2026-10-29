@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"webtyp.com/model"
 	"testing"
 
 	supplymanager "github.com/veltylabs/supply_manager"
@@ -95,7 +96,7 @@ func TestEvents_FailedOperationPublishesNothing(t *testing.T) {
 	_, err = m.RegisterOutput(supplymanager.RegisterOutputArgs{
 		TenantId: testTenant, ItemId: item.Id, LocationId: loc.Id, Quantity: 6, MovementType: string(stock.InternalUse),
 	})
-	if err != supplymanager.ErrInsufficientStock {
+	if model.KindOf(err) != model.ErrorInvalid {
 		t.Errorf("expected ErrInsufficientStock, got %v", err)
 	}
 

@@ -16,6 +16,7 @@ require (
 	webtyp.com/notify v0.2.2
 	webtyp.com/orm v0.12.20
 	webtyp.com/router v0.4.16
+	webtyp.com/rpc v0.2.13
 	webtyp.com/stock v0.1.4
 	webtyp.com/storage v0.1.8
 	webtyp.com/svg v0.3.30
@@ -30,5 +31,4 @@ require (
 	webtyp.com/fetch v0.1.29 // indirect
 	webtyp.com/filepath v0.1.0 // indirect
 	webtyp.com/json v0.5.37 // indirect
-	webtyp.com/rpc v0.2.13 // indirect
 )
