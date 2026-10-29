@@ -1,4 +1,5 @@
 package supplymanager
+import "webtyp.com/model"
 
 import (
 	"webtyp.com/fmt"
@@ -116,7 +117,7 @@ func (m *Module) ReviewExpiring(tenantId string, withinDays int) ([]ExpiringStoc
 // narrow interface of their own; *Module satisfies it without importing them.
 func (m *Module) ItemExists(tenantId, itemId string) (bool, error) {
 	p, err := getItem(m.db, tenantId, itemId)
-	if err == ErrItemNotFound {
+	if model.KindOf(err) == model.ErrorNotFound {
 		return false, nil
 	}
 	if err != nil {
@@ -128,7 +129,7 @@ func (m *Module) ItemExists(tenantId, itemId string) (bool, error) {
 // ItemCard returns what another module snapshots about an item. An absent or foreign item is ErrNotFound.
 func (m *Module) ItemCard(tenantId, itemId string) (name, unit string, active bool, err error) {
 	p, err := getItem(m.db, tenantId, itemId)
-	if err == ErrItemNotFound {
+	if model.KindOf(err) == model.ErrorNotFound {
 		return "", "", false, ErrNotFound
 	}
 	if err != nil {

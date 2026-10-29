@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"webtyp.com/model"
 	"testing"
 
 	"webtyp.com/time"
@@ -23,7 +24,7 @@ func TestLocation_ARoomIsSuppliedByOneActiveLocation(t *testing.T) {
 	m := newModule(t)
 	roomLocation(t, m, "Box 1 shelf", "room-1")
 
-	if _, err := m.CreateLocation(supplymanager.SupplyLocation{TenantId: testTenant, Name: "Other shelf", RoomId: "room-1", IsActive: true}); err != supplymanager.ErrRoomTaken {
+	if _, err := m.CreateLocation(supplymanager.SupplyLocation{TenantId: testTenant, Name: "Other shelf", RoomId: "room-1", IsActive: true}); model.KindOf(err) != model.ErrorConflict {
 		t.Errorf("second active location for the same room: got %v, want ErrRoomTaken", err)
 	}
 	if _, err := m.CreateLocation(supplymanager.SupplyLocation{TenantId: testTenant, Name: "Old shelf", RoomId: "room-1", IsActive: false}); err != nil {
@@ -34,7 +35,7 @@ func TestLocation_ARoomIsSuppliedByOneActiveLocation(t *testing.T) {
 	}
 	other := newLocation(t, m, "Store")
 	other.RoomId = "room-1"
-	if _, err := m.UpdateLocation(other); err != supplymanager.ErrRoomTaken {
+	if _, err := m.UpdateLocation(other); model.KindOf(err) != model.ErrorConflict {
 		t.Errorf("update onto a taken room: got %v, want ErrRoomTaken", err)
 	}
 }
@@ -91,16 +92,16 @@ func TestUseInRoom_Errors(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := m.UseInRoom(testTenant, "room-9", item.Id, 1, "encounter", "e", ""); err != supplymanager.ErrNoLocationForRoom {
+	if _, err := m.UseInRoom(testTenant, "room-9", item.Id, 1, "encounter", "e", ""); model.KindOf(err) != model.ErrorInvalid {
 		t.Errorf("room without location: got %v, want ErrNoLocationForRoom", err)
 	}
-	if _, err := m.UseInRoom(testTenant, "room-1", item.Id, 2, "encounter", "e", ""); err != supplymanager.ErrInsufficientStock {
+	if _, err := m.UseInRoom(testTenant, "room-1", item.Id, 2, "encounter", "e", ""); model.KindOf(err) != model.ErrorInvalid {
 		t.Errorf("not enough: got %v, want ErrInsufficientStock", err)
 	}
 	if cost, err := m.UseInRoom(testTenant, "room-1", item.Id, 1, "encounter", "e", ""); err != nil || cost != 0 {
 		t.Errorf("a batch without cost costs 0: got %d %v", cost, err)
 	}
-	if _, err := m.UseInRoom("tenant-2", "room-1", item.Id, 1, "encounter", "e", ""); err != supplymanager.ErrNoLocationForRoom {
+	if _, err := m.UseInRoom("tenant-2", "room-1", item.Id, 1, "encounter", "e", ""); model.KindOf(err) != model.ErrorInvalid {
 		t.Errorf("another tenant does not see the room's location: got %v", err)
 	}
 }

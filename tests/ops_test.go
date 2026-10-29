@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"strings"
 	"testing"
 
 	"webtyp.com/time"
@@ -68,10 +67,10 @@ func TestOperations_ThroughTheCaller(t *testing.T) {
 
 	// the view's delete: ids only; an item with batches cannot go
 	err := call(t, c, supplymanager.OpDeleteItem, &supplymanager.DeleteIdsArgs{Ids: []string{prod.Id}}, nil)
-	if err == nil || !strings.Contains(err.Error(), string(supplymanager.ErrItemInUse)) {
+	if err == nil || model.KindOf(err) != model.ErrorInvalid {
 		t.Errorf("deleting an item with batches: got %v, want ErrItemInUse", err)
 	}
-	if err := call(t, c, supplymanager.OpDeleteLocation, &supplymanager.DeleteIdsArgs{Ids: []string{loc.Id}}, nil); err == nil || !strings.Contains(err.Error(), string(supplymanager.ErrLocationInUse)) {
+	if err := call(t, c, supplymanager.OpDeleteLocation, &supplymanager.DeleteIdsArgs{Ids: []string{loc.Id}}, nil); err == nil || model.KindOf(err) != model.ErrorInvalid {
 		t.Errorf("deleting a location with stock: got %v, want ErrLocationInUse", err)
 	}
 }

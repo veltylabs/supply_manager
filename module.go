@@ -58,7 +58,7 @@ func (m *Module) CreateItem(p SupplyItem) (SupplyItem, error) {
 		return SupplyItem{}, err
 	}
 	if err := p.Validate(model.ActionCreate); err != nil {
-		return SupplyItem{}, ValidationError{Err: err}
+		return SupplyItem{}, err
 	}
 	if _, found, err := m.itemBySKU(m.db, p.TenantId, p.Sku); err != nil {
 		return SupplyItem{}, err
@@ -117,7 +117,7 @@ func (m *Module) CreateLocation(l SupplyLocation) (SupplyLocation, error) {
 	}
 	l.UpdatedAt = time.NowNano()
 	if err := l.Validate(model.ActionCreate); err != nil {
-		return SupplyLocation{}, ValidationError{Err: err}
+		return SupplyLocation{}, err
 	}
 	var proxy SupplyLocation
 	qb := m.db.Query(&proxy).Where(SupplyLocation_.Name).Eq(l.Name).Where(SupplyLocation_.TenantId).Eq(l.TenantId)
@@ -228,7 +228,7 @@ func applyToLevel(tx *orm.DB, level *SupplyStockLevel, expectedRevision int64, d
 		return ErrInsufficientStock
 	}
 	if err != nil {
-		return ValidationError{Err: err}
+		return err
 	}
 	got.Quantity = newQuantity
 	got.Revision++
@@ -280,7 +280,7 @@ func lotsAt(db *orm.DB, tenantId, itemId, locationId string) ([]stock.Lot, error
 // the quantity to the (location, batch) level and appends a stock.Purchase movement, all in one transaction.
 func (m *Module) ReceiveStock(a ReceiveStockArgs) (SupplyMovement, error) {
 	if a.Quantity <= 0 {
-		return SupplyMovement{}, ValidationError{Err: stock.ErrQuantity}
+		return SupplyMovement{}, model.Invalid(stock.ErrQuantity)
 	}
 	if a.BatchNumber == "" {
 		return SupplyMovement{}, ErrBatchNumber
@@ -348,7 +348,7 @@ func (m *Module) ReceiveStock(a ReceiveStockArgs) (SupplyMovement, error) {
 // RegisterEntry adds to an EXISTING batch: an inbound correction of a count (stock.AdjustIn).
 func (m *Module) RegisterEntry(a RegisterEntryArgs) (SupplyMovement, error) {
 	if a.Quantity <= 0 {
-		return SupplyMovement{}, ValidationError{Err: stock.ErrQuantity}
+		return SupplyMovement{}, model.Invalid(stock.ErrQuantity)
 	}
 	now := time.NowNano()
 	var mv SupplyMovement
@@ -391,7 +391,7 @@ const msgBelowMinimum = "%v %s left; minimum %v."
 
 func (m *Module) RegisterOutput(a RegisterOutputArgs) ([]SupplyMovement, error) {
 	if a.Quantity <= 0 {
-		return nil, ValidationError{Err: stock.ErrQuantity}
+		return nil, model.Invalid(stock.ErrQuantity)
 	}
 	t := stock.Movement(a.MovementType)
 	if t != stock.InternalUse && t != stock.AdjustOut {
@@ -429,7 +429,7 @@ func (m *Module) RegisterOutput(a RegisterOutputArgs) ([]SupplyMovement, error) 
 				return ErrInsufficientStock
 			}
 			if err != nil {
-				return ValidationError{Err: err}
+				return err
 			}
 		} else {
 			batch, err := getBatch(tx, a.TenantId, a.BatchId)
@@ -516,7 +516,7 @@ func (m *Module) RegisterOutput(a RegisterOutputArgs) ([]SupplyMovement, error) 
 // destination, one transaction.
 func (m *Module) TransferStock(a TransferStockArgs) ([]SupplyMovement, error) {
 	if a.Quantity <= 0 {
-		return nil, ValidationError{Err: stock.ErrQuantity}
+		return nil, model.Invalid(stock.ErrQuantity)
 	}
 	if a.FromLocationId == a.ToLocationId {
 		return nil, ErrSameLocation
@@ -546,7 +546,7 @@ func (m *Module) TransferStock(a TransferStockArgs) ([]SupplyMovement, error) {
 			return ErrInsufficientStock
 		}
 		if err != nil {
-			return ValidationError{Err: err}
+			return err
 		}
 		for _, take := range takes {
 			src, found, err := levelAt(tx, a.TenantId, a.FromLocationId, take.LotID)
@@ -624,7 +624,6 @@ func (m *Module) publishCosts(movements []SupplyMovement, unitCosts []int64) err
 	}
 	return nil
 }
-
 
 // checkRoomFree: an active location that names a room must be the only active one of its tenant that names it.
 func (m *Module) checkRoomFree(l SupplyLocation) error {

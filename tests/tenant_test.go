@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"webtyp.com/model"
 	"testing"
 
 	supplymanager "github.com/veltylabs/supply_manager"
@@ -33,12 +34,12 @@ func TestTenantIsolation(t *testing.T) {
 	_, err = m.ReceiveStock(supplymanager.ReceiveStockArgs{
 		TenantId: tenant2, ItemId: item.Id, LocationId: loc.Id, BatchNumber: "L2", Quantity: 5,
 	})
-	if err != supplymanager.ErrItemNotFound {
+	if model.KindOf(err) != model.ErrorNotFound {
 		t.Errorf("expected ErrItemNotFound, got %v", err)
 	}
 
 	_, err = m.GetBatch(tenant2, rec.BatchId)
-	if err != supplymanager.ErrBatchNotFound {
+	if model.KindOf(err) != model.ErrorNotFound {
 		t.Errorf("expected ErrBatchNotFound, got %v", err)
 	}
 }

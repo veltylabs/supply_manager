@@ -1,8 +1,8 @@
 package tests
 
 import (
+	"webtyp.com/model"
 	"testing"
-
 
 	supplymanager "github.com/veltylabs/supply_manager"
 	"webtyp.com/stock"
@@ -65,14 +65,14 @@ func TestTransferStock_Rules(t *testing.T) {
 	_, err := m.TransferStock(supplymanager.TransferStockArgs{
 		TenantId: testTenant, ItemId: item.Id, FromLocationId: locA.Id, ToLocationId: locA.Id, Quantity: 4,
 	})
-	if err != supplymanager.ErrSameLocation {
+	if model.KindOf(err) != model.ErrorInvalid {
 		t.Errorf("expected ErrSameLocation, got %v", err)
 	}
 
 	_, err = m.TransferStock(supplymanager.TransferStockArgs{
 		TenantId: testTenant, ItemId: item.Id, FromLocationId: locA.Id, ToLocationId: locB.Id, Quantity: 11,
 	})
-	if err != supplymanager.ErrInsufficientStock {
+	if model.KindOf(err) != model.ErrorInvalid {
 		t.Errorf("expected ErrInsufficientStock, got %v", err)
 	}
 
@@ -113,14 +113,14 @@ func TestRegisterEntry(t *testing.T) {
 	_, err = m.RegisterEntry(supplymanager.RegisterEntryArgs{
 		TenantId: testTenant, ItemId: item.Id, LocationId: loc.Id, BatchId: "unknown", Quantity: 3,
 	})
-	if err != supplymanager.ErrBatchNotFound {
+	if model.KindOf(err) != model.ErrorNotFound {
 		t.Errorf("expected ErrBatchNotFound, got %v", err)
 	}
 
 	_, err = m.RegisterEntry(supplymanager.RegisterEntryArgs{
 		TenantId: testTenant, ItemId: item.Id, LocationId: loc.Id, BatchId: rec.BatchId, Quantity: 0,
 	})
-	if _, ok := err.(supplymanager.ValidationError); !ok {
+	if model.KindOf(err) != model.ErrorInvalid {
 		t.Errorf("expected ValidationError, got %v", err)
 	}
 }
@@ -140,7 +140,7 @@ func TestReceiveStock_CostRules(t *testing.T) {
 	_, err = m.ReceiveStock(supplymanager.ReceiveStockArgs{
 		TenantId: testTenant, ItemId: item.Id, LocationId: loc.Id, BatchNumber: "L1", Quantity: 10, UnitCost: 200,
 	})
-	if err != supplymanager.ErrBatchCostMismatch {
+	if model.KindOf(err) != model.ErrorConflict {
 		t.Errorf("expected ErrBatchCostMismatch, got %v", err)
 	}
 

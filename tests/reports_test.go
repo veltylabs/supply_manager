@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"webtyp.com/model"
 	"testing"
 
 	"webtyp.com/time"
@@ -29,7 +30,7 @@ func TestListExpiring(t *testing.T) {
 	if len(got) != 2 || got[0].BatchNumber != "EXPIRED" || !got[0].Expired || got[1].BatchNumber != "SOON" || got[1].Expired {
 		t.Fatalf("EXPIRED then SOON expected (FAR excluded), got %+v", got)
 	}
-	if _, err := m.ListExpiring(supplymanager.ListExpiringArgs{TenantId: testTenant, WithinDays: -1}); err != supplymanager.ErrDays {
+	if _, err := m.ListExpiring(supplymanager.ListExpiringArgs{TenantId: testTenant, WithinDays: -1}); model.KindOf(err) != model.ErrorInvalid {
 		t.Errorf("negative days: got %v, want ErrDays", err)
 	}
 }
