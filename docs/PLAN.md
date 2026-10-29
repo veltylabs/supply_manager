@@ -3,8 +3,9 @@ PLAN: "refactor: module review — errors via rpc.WriteError, resources from tab
 EXECUTOR: jules
 REVIEWER: none
 STATUS: review
-PR: https://github.com/veltylabs/supply_manager/pull/8
 SESSION: 1820553771360114837
+PR: https://github.com/veltylabs/supply_manager/pull/8
+REVIEWED_COMMIT: 2c399826b55ef5b75d259358299116253a3099ab
 ---
 
 > Read AGENTS.md at the repo root before any change.
