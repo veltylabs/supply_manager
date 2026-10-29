@@ -54,7 +54,6 @@ func (a *UpsertItemArgs) EncodeFields(w model.FieldWriter) {
 	for i := range a.Records {
 		arr.Object(&a.Records[i])
 	}
-	arr.Close()
 }
 func (a *UpsertItemArgs) DecodeFields(r model.FieldReader) {
 	if arr, ok := r.Array("records"); ok {
@@ -77,7 +76,6 @@ func (a *UpsertLocationArgs) EncodeFields(w model.FieldWriter) {
 	for i := range a.Records {
 		arr.Object(&a.Records[i])
 	}
-	arr.Close()
 }
 func (a *UpsertLocationArgs) DecodeFields(r model.FieldReader) {
 	if arr, ok := r.Array("records"); ok {
@@ -147,7 +145,6 @@ func writeStrings(w model.FieldWriter, name string, values []string) {
 	for _, v := range values {
 		arr.String(v)
 	}
-	arr.Close()
 }
 
 func readStrings(r model.FieldReader, name string) []string {
