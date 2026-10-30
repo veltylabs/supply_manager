@@ -6,7 +6,7 @@ import (
 	"webtyp.com/rpc"
 )
 
-// Operation names, as the transport and the view see them: "<ModelName>.<name>".
+// Nombres de las operaciones, tal como las ven el transporte y la vista: "<ModelName>.<name>".
 const (
 	OpListItems      = "list_items"
 	OpGetItem        = "get_item"
@@ -32,7 +32,7 @@ const (
 	OpListLowStock   = "list_low_stock"
 )
 
-// Resources of the RBAC: one per table, so that a role can be granted exactly one.
+// Recursos del RBAC: uno por tabla, para que se le pueda otorgar exactamente uno a un rol.
 const (
 	resItem     = "supply_item"
 	resLocation = "supply_location"
@@ -41,9 +41,9 @@ const (
 	resMovement = "supply_movement"
 )
 
-// ---- the wire shapes of the operations the generic view drives (webtyp.com/view sends exactly these) ----
+// ---- las formas de red de las operaciones que maneja la vista genérica (webtyp.com/view envía exactamente estas) ----
 
-// UpsertItemArgs is what view's save sends: {"records": [...]}.
+// UpsertItemArgs es lo que envía "save" de la vista: {"records": [...]}.
 type UpsertItemArgs struct{ Records []SupplyItem }
 
 func (a *UpsertItemArgs) ModelName() string     { return "upsert_item_args" }
@@ -65,7 +65,7 @@ func (a *UpsertItemArgs) DecodeFields(r model.FieldReader) {
 	}
 }
 
-// UpsertLocationArgs is what view's save sends for a location.
+// UpsertLocationArgs es lo que envía "save" de la vista para una ubicación.
 type UpsertLocationArgs struct{ Records []SupplyLocation }
 
 func (a *UpsertLocationArgs) ModelName() string     { return "upsert_location_args" }
@@ -87,7 +87,7 @@ func (a *UpsertLocationArgs) DecodeFields(r model.FieldReader) {
 	}
 }
 
-// UpdateItemArgs is what view's update sends: the ids, the names of the fields to change and a record with their values.
+// UpdateItemArgs es lo que envía "update" de la vista: los ids, los nombres de los campos a cambiar y un registro con sus valores.
 type UpdateItemArgs struct {
 	Ids    []string
 	Fields []string
@@ -109,7 +109,7 @@ func (a *UpdateItemArgs) DecodeFields(r model.FieldReader) {
 	r.Object("record", &a.Record)
 }
 
-// UpdateLocationArgs is the same shape for a location.
+// UpdateLocationArgs es la misma forma para una ubicación.
 type UpdateLocationArgs struct {
 	Ids    []string
 	Fields []string
@@ -131,7 +131,7 @@ func (a *UpdateLocationArgs) DecodeFields(r model.FieldReader) {
 	r.Object("record", &a.Record)
 }
 
-// DeleteIdsArgs is what view's delete sends for items and locations: {"ids": [...]}.
+// DeleteIdsArgs es lo que envía "delete" de la vista para artículos y ubicaciones: {"ids": [...]}.
 type DeleteIdsArgs struct{ Ids []string }
 
 func (a *DeleteIdsArgs) ModelName() string                { return "delete_ids_args" }
@@ -160,7 +160,10 @@ func readStrings(r model.FieldReader, name string) []string {
 	return out
 }
 
-// MountOperations registers every operation with the RBAC resource and action it needs and the type of its arguments.
+// MountOperations registra cada operación con el recurso y la acción RBAC que necesita y el tipo de sus argumentos.
+//
+// Ejemplo:
+//  m.MountOperations(router)
 func (m *Module) MountOperations(reg router.OperationRegistry) {
 	reg.Operation(OpListItems, m.opListItems).Requires(resItem, model.Read).Accepts(&ListItemsArgs{})
 	reg.Operation(OpGetItem, m.opGetItem).Requires(resItem, model.Read).Accepts(&IdArgs{})
@@ -188,9 +191,9 @@ func (m *Module) MountOperations(reg router.OperationRegistry) {
 
 var _ router.OperationModule = (*Module)(nil)
 
-// ---- handlers: decode, call the method, encode; every failure goes through writeError ----
+// ---- manejadores: decodificar, llamar al método, codificar; cada fallo pasa por writeError ----
 
-// answer encodes v, or answers the failure.
+// answer codifica v, o responde el fallo.
 func answer(ctx router.Context, v model.Encodable, err error) {
 	if err != nil {
 		rpc.WriteError(ctx, err)

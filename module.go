@@ -11,23 +11,23 @@ import (
 	"webtyp.com/time"
 )
 
-// TopicMovementRegistered is published once per stock movement, after the transaction commits. Payload: *SupplyMovement.
+// TopicMovementRegistered se publica una vez por cada movimiento de stock, después del commit. Payload: *SupplyMovement.
 const TopicMovementRegistered = "supply.movement.registered"
 
 const (
-	// sourceType is the Ref.Type of the cost facts: the movement is their cause.
+	// sourceType es el Ref.Type de los hechos de costo: el movimiento es su causa.
 	sourceType = "supply_movement"
 
 	msgNeedIDs     = "supply: Deps.IDs is required"
 	msgPublishCost = "supply: the stock change was saved but its cost fact could not be published:"
 )
 
-// Deps are what the module needs from the application that composes it.
+// Deps son las dependencias que el módulo necesita de la aplicación que lo compone.
 type Deps struct {
-	IDs        model.IDGenerator // required: the module never builds a generator
-	Publisher  events.Publisher  // optional: nil disables the events and the cost facts
-	MoneyScope string            // optional: the area of the business the cost facts belong to; "" disables the cost facts
-	AlertArea  string            // optional: the application's notify.Area code for this module's alerts; "" disables them
+	IDs        model.IDGenerator // requerido: el módulo nunca construye un generador
+	Publisher  events.Publisher  // opcional: nil desactiva los eventos y los hechos de costo
+	MoneyScope string            // opcional: el área del negocio a la que pertenecen los hechos de costo; "" desactiva los hechos de costo
+	AlertArea  string            // opcional: el código notify.Area de la aplicación para las alertas de este módulo; "" las desactiva
 }
 
 type Module struct {
@@ -45,10 +45,15 @@ func New(db *orm.DB, deps Deps) (*Module, error) {
 	return &Module{db: db, ids: deps.IDs, pub: deps.Publisher, scope: deps.MoneyScope, alertArea: deps.AlertArea}, nil
 }
 
+// ModelName devuelve el nombre del modelo.
 func (m *Module) ModelName() string { return ModelName }
 
-// ---- items and locations (the pattern the rest of the CRUD follows) ----
+// ---- items and locations (el patrón que sigue el resto del CRUD) ----
 
+// CreateItem crea un nuevo artículo.
+//
+// Ejemplo:
+//  item, err := m.CreateItem(SupplyItem{TenantId: "t1", Sku: "123", Name: "Guantes", Unit: UnitBox, IsActive: true})
 func (m *Module) CreateItem(p SupplyItem) (SupplyItem, error) {
 	if p.Id == "" {
 		p.Id = m.ids.NewID()
@@ -71,7 +76,7 @@ func (m *Module) CreateItem(p SupplyItem) (SupplyItem, error) {
 	return p, nil
 }
 
-// checkItem applies the rules of an item that the field constraints cannot express.
+// checkItem aplica las reglas de un artículo que las restricciones de los campos no pueden expresar.
 func checkItem(p *SupplyItem) error {
 	switch p.Unit {
 	case UnitPiece, UnitBox, UnitPair, UnitMl, UnitGram:
@@ -81,6 +86,10 @@ func checkItem(p *SupplyItem) error {
 	return nil
 }
 
+// GetItem devuelve un artículo por su id.
+//
+// Ejemplo:
+//  item, err := m.GetItem("t1", "1")
 func (m *Module) GetItem(tenantId, id string) (SupplyItem, error) {
 	return getItem(m.db, tenantId, id)
 }
@@ -111,6 +120,10 @@ func (m *Module) itemBySKU(db *orm.DB, tenantId, sku string) (SupplyItem, bool, 
 	return *got, true, nil
 }
 
+// CreateLocation crea una nueva ubicación.
+//
+// Ejemplo:
+//  loc, err := m.CreateLocation(SupplyLocation{TenantId: "t1", Name: "Depósito", IsActive: true})
 func (m *Module) CreateLocation(l SupplyLocation) (SupplyLocation, error) {
 	if l.Id == "" {
 		l.Id = m.ids.NewID()
@@ -135,6 +148,10 @@ func (m *Module) CreateLocation(l SupplyLocation) (SupplyLocation, error) {
 	return l, nil
 }
 
+// GetLocation devuelve una ubicación por su id.
+//
+// Ejemplo:
+//  loc, err := m.GetLocation("t1", "1")
 func (m *Module) GetLocation(tenantId, id string) (SupplyLocation, error) {
 	return getLocation(m.db, tenantId, id)
 }
@@ -152,7 +169,7 @@ func getLocation(db *orm.DB, tenantId, id string) (SupplyLocation, error) {
 	return *got, nil
 }
 
-// ---- batches and stock levels ----
+// ---- lotes y niveles de stock ----
 
 func getBatch(db *orm.DB, tenantId, id string) (SupplyBatch, error) {
 	var b SupplyBatch
@@ -180,7 +197,7 @@ func batchByNumber(db *orm.DB, tenantId, itemId, number string) (SupplyBatch, bo
 	return *got, true, nil
 }
 
-// levelAt is the stock level item of a batch in a location; found is false when the batch was never there.
+// levelAt es el nivel de stock de un lote en una ubicación; found es false cuando el lote nunca estuvo allí.
 func levelAt(db *orm.DB, tenantId, locationId, batchId string) (SupplyStockLevel, bool, error) {
 	var l SupplyStockLevel
 	qb := db.Query(&l).Where(SupplyStockLevel_.LocationId).Eq(locationId).Where(SupplyStockLevel_.BatchId).Eq(batchId).Where(SupplyStockLevel_.TenantId).Eq(tenantId)
@@ -194,7 +211,7 @@ func levelAt(db *orm.DB, tenantId, locationId, batchId string) (SupplyStockLevel
 	return *got, true, nil
 }
 
-// levelOrCreate returns the level item of a batch in a location, creating it at quantity 0 and revision 0.
+// levelOrCreate devuelve el nivel de stock de un lote en una ubicación, creándolo con cantidad 0 y revisión 0.
 func (m *Module) levelOrCreate(tx *orm.DB, tenantId, locationId, batchId string, now time.Nano) (SupplyStockLevel, error) {
 	level, found, err := levelAt(tx, tenantId, locationId, batchId)
 	if err != nil {
@@ -210,9 +227,9 @@ func (m *Module) levelOrCreate(tx *orm.DB, tenantId, locationId, batchId string,
 	return level, nil
 }
 
-// applyToLevel changes the quantity of a stock level by `quantity` in direction d, guarded by the revision the caller
-// read: if the item changed since (expectedRevision differs from the stored one) it is ErrConflict and nothing is
-// written. stock.Apply keeps the quantity from going negative (ErrInsufficientStock).
+// applyToLevel cambia la cantidad de un nivel de stock por `quantity` en la dirección d, protegido por la revisión que el llamador
+// leyó: si el registro cambió desde entonces (expectedRevision difiere de la almacenada) devuelve ErrConflict y no se escribe nada.
+// stock.Apply evita que la cantidad sea negativa (ErrInsufficientStock).
 func applyToLevel(tx *orm.DB, level *SupplyStockLevel, expectedRevision int64, d stock.Direction, quantity float64, now time.Nano) error {
 	var current SupplyStockLevel
 	qb := tx.Query(&current).Where(SupplyStockLevel_.Id).Eq(level.Id).Where(SupplyStockLevel_.TenantId).Eq(level.TenantId)
@@ -240,7 +257,7 @@ func applyToLevel(tx *orm.DB, level *SupplyStockLevel, expectedRevision int64, d
 	return nil
 }
 
-// addMovement appends one ledger entry inside the transaction.
+// addMovement agrega una entrada al libro mayor dentro de la transacción.
 func (m *Module) addMovement(tx *orm.DB, tenantId, batchId, locationId string, t stock.Movement, quantity float64, docType, docId, note, by string, now time.Nano) (SupplyMovement, error) {
 	mv := SupplyMovement{
 		Id: m.ids.NewID(), TenantId: tenantId, BatchId: batchId, LocationId: locationId, MovementType: string(t), Quantity: quantity,
@@ -252,8 +269,8 @@ func (m *Module) addMovement(tx *orm.DB, tenantId, batchId, locationId string, t
 	return mv, nil
 }
 
-// lotsAt turns the stock of an item in a location into the lots webtyp.com/stock allocates from: one Lot per batch
-// that has a level item there, with the batch's expiry and the level's quantity.
+// lotsAt convierte el stock de un artículo en una ubicación en los lotes de los que webtyp.com/stock asigna: un Lot por lote
+// que tiene un nivel allí, con el vencimiento del lote y la cantidad del nivel.
 func lotsAt(db *orm.DB, tenantId, itemId, locationId string) ([]stock.Lot, error) {
 	var proxy SupplyBatch
 	batches, err := ReadAllSupplyBatch(db.Query(&proxy).Where(SupplyBatch_.ItemId).Eq(itemId).Where(SupplyBatch_.TenantId).Eq(tenantId))
@@ -276,8 +293,11 @@ func lotsAt(db *orm.DB, tenantId, itemId, locationId string) ([]stock.Lot, error
 
 // ---- the four stock operations ----
 
-// ReceiveStock adds stock of an item to a location: it finds or creates the batch (the expiry date is optional, 0 = none), adds
-// the quantity to the (location, batch) level and appends a stock.Purchase movement, all in one transaction.
+// ReceiveStock añade stock de un artículo a una ubicación: encuentra o crea el lote (la fecha de vencimiento es opcional, 0 = ninguna), añade
+// la cantidad al nivel (ubicación, lote) y añade un movimiento stock.Purchase, todo en una sola transacción.
+//
+// Ejemplo:
+//  mov, err := m.ReceiveStock(ReceiveStockArgs{TenantId: "t1", ItemId: "1", LocationId: "2", Quantity: 10, BatchNumber: NoBatchNumber})
 func (m *Module) ReceiveStock(a ReceiveStockArgs) (SupplyMovement, error) {
 	if a.Quantity <= 0 {
 		return SupplyMovement{}, model.Invalid(stock.ErrQuantity)
@@ -345,7 +365,10 @@ func (m *Module) ReceiveStock(a ReceiveStockArgs) (SupplyMovement, error) {
 	return mv, nil
 }
 
-// RegisterEntry adds to an EXISTING batch: an inbound correction of a count (stock.AdjustIn).
+// RegisterEntry añade a un lote EXISTENTE: una corrección de entrada (stock.AdjustIn).
+//
+// Ejemplo:
+//  mov, err := m.RegisterEntry(RegisterEntryArgs{TenantId: "t1", ItemId: "1", LocationId: "2", BatchId: "3", Quantity: 5})
 func (m *Module) RegisterEntry(a RegisterEntryArgs) (SupplyMovement, error) {
 	if a.Quantity <= 0 {
 		return SupplyMovement{}, model.Invalid(stock.ErrQuantity)
@@ -383,10 +406,13 @@ func (m *Module) RegisterEntry(a RegisterEntryArgs) (SupplyMovement, error) {
 	return mv, nil
 }
 
-// RegisterOutput takes stock out: an internal use (stock.InternalUse, the use in a consultation) or a write-off (stock.AdjustOut). Without a batch id the batches are drawn by
-// first expiry first out (stock.Allocate); only a write-off (stock.AdjustOut) may take expired stock. It returns one
-// movement per batch used. If the cost fact cannot be published after the commit, the movements are returned WITH the
-// error: the stock change is already saved.
+// RegisterOutput saca stock: un uso interno (stock.InternalUse, el uso en una consulta) o una baja (stock.AdjustOut). Sin un id de lote, los lotes se extraen por
+// primero en vencer, primero en salir (stock.Allocate); solo una baja (stock.AdjustOut) puede tomar stock vencido. Devuelve un
+// movimiento por cada lote usado. Si el hecho de costo no se puede publicar después del commit, los movimientos se devuelven CON el
+// error: el cambio de stock ya está guardado.
+//
+// Ejemplo:
+//  movs, err := m.RegisterOutput(RegisterOutputArgs{TenantId: "t1", ItemId: "1", LocationId: "2", Quantity: 2, MovementType: string(stock.InternalUse)})
 const msgBelowMinimum = "%v %s left; minimum %v."
 
 func (m *Module) RegisterOutput(a RegisterOutputArgs) ([]SupplyMovement, error) {
@@ -511,9 +537,12 @@ func (m *Module) RegisterOutput(a RegisterOutputArgs) ([]SupplyMovement, error) 
 	return out, nil
 }
 
-// TransferStock moves stock of an item between two locations, drawing the batches by first expiry first out and
-// putting the same batches in the destination: stock.TransferOut movements at the origin, stock.TransferIn at the
-// destination, one transaction.
+// TransferStock mueve el stock de un artículo entre dos ubicaciones, sacando los lotes por primero en vencer, primero en salir y
+// poniendo los mismos lotes en el destino: movimientos stock.TransferOut en el origen, stock.TransferIn en el
+// destino, en una sola transacción.
+//
+// Ejemplo:
+//  movs, err := m.TransferStock(TransferStockArgs{TenantId: "t1", ItemId: "1", FromLocationId: "2", ToLocationId: "3", Quantity: 5})
 func (m *Module) TransferStock(a TransferStockArgs) ([]SupplyMovement, error) {
 	if a.Quantity <= 0 {
 		return nil, model.Invalid(stock.ErrQuantity)
@@ -595,8 +624,8 @@ func (m *Module) publish(mv SupplyMovement) {
 	}
 }
 
-// publishCosts announces what an output consumed, at cost: one money.Consumed fact per movement whose batch has a unit cost.
-// It does nothing unless the application gave a Publisher and a MoneyScope.
+// publishCosts anuncia lo que un consumo gastó, al costo: un hecho money.Consumed por cada movimiento cuyo lote tenga un costo unitario.
+// No hace nada a menos que la aplicación proporcione un Publisher y un MoneyScope.
 func (m *Module) publishCosts(movements []SupplyMovement, unitCosts []int64) error {
 	if m.pub == nil || m.scope == "" {
 		return nil
@@ -625,7 +654,7 @@ func (m *Module) publishCosts(movements []SupplyMovement, unitCosts []int64) err
 	return nil
 }
 
-// checkRoomFree: an active location that names a room must be the only active one of its tenant that names it.
+// checkRoomFree: una ubicación activa que nombra una sala debe ser la única activa de su tenant que la nombre.
 func (m *Module) checkRoomFree(l SupplyLocation) error {
 	if l.RoomId == "" || !l.IsActive {
 		return nil
@@ -640,7 +669,7 @@ func (m *Module) checkRoomFree(l SupplyLocation) error {
 	return nil
 }
 
-// locationOfRoom returns the active location of the tenant that supplies roomId, skipping the location exceptId.
+// locationOfRoom devuelve la ubicación activa del tenant que abastece a roomId, omitiendo la ubicación exceptId.
 func (m *Module) locationOfRoom(tenantId, roomId, exceptId string) (SupplyLocation, bool, error) {
 	var proxy SupplyLocation
 	qb := m.db.Query(&proxy).Where(SupplyLocation_.TenantId).Eq(tenantId).Where(SupplyLocation_.RoomId).Eq(roomId)
@@ -656,15 +685,18 @@ func (m *Module) locationOfRoom(tenantId, roomId, exceptId string) (SupplyLocati
 	return SupplyLocation{}, false, nil
 }
 
-// UseInRoom takes quantity of an item out of the location that supplies roomId, as a consumption (stock.InternalUse)
-// caused by the document (docType, docId) — an attention, for clinical_encounter — by first expiry first out, exactly
-// like RegisterOutput. It returns the cost of what was taken in whole pesos (each batch's unit cost × its quantity,
-// rounded half away from zero; 0 when the batches have no cost). Its arguments are plain types so that another module can
-// declare it in a narrow interface of its own without importing this one.
+// UseInRoom saca la cantidad de un artículo de la ubicación que abastece a roomId, como un consumo (stock.InternalUse)
+// causado por el documento (docType, docId) — una atención, para clinical_encounter — por primero en vencer, primero en salir, exactamente
+// como RegisterOutput. Devuelve el costo de lo que se tomó en pesos enteros (el costo unitario de cada lote × su cantidad,
+// redondeado a medias lejos de cero; 0 cuando los lotes no tienen costo). Sus argumentos son tipos simples para que otro módulo pueda
+// declararlo en una interfaz propia sin importar este.
 //
-// Errors: ErrNoLocationForRoom (no active location supplies the room) and every error of RegisterOutput
-// (ErrInsufficientStock, ErrItemNotFound, …). If the cost fact cannot be published after the commit, the cost is returned
-// WITH the error: the stock change is already saved.
+// Errores: ErrNoLocationForRoom (ninguna ubicación activa abastece la sala) y cada error de RegisterOutput
+// (ErrInsufficientStock, ErrItemNotFound, …). Si el hecho de costo no se puede publicar después del commit, el costo se devuelve
+// CON el error: el cambio de stock ya está guardado.
+//
+// Ejemplo:
+//  cost, err := m.UseInRoom("t1", "r1", "1", 2, "clinical_encounter", "doc1", "user1")
 func (m *Module) UseInRoom(tenantId, roomId, itemId string, quantity float64, docType, docId, by string) (int64, error) {
 	loc, found, err := m.locationOfRoom(tenantId, roomId, "")
 	if err != nil {

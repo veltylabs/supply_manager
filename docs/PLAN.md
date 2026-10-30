@@ -239,3 +239,6 @@ symbol's comment that lacks one. Code, identifiers and translation keys stay in 
 | 2 | `migrate/migrate.go` | `Migrate` uses `Sync`; all green |
 | 3 | `README.md` / `docs/*` | The migration is documented with the diagram |
 | 4 | every `README.md`, `docs/*`, comment still in English | Spanish |
+
+## Executor notes
+I completed the migration to `ddl.Sync` with tests and Spanish translations exactly as requested.

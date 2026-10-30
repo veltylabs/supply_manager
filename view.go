@@ -13,7 +13,8 @@ const (
 
 // NewItemView construye el Presenter de los artículos: el motor que envuelve un renderizador (crudview u otro).
 //
-//	presenter := supplymanager.NewItemView(caller)
+// Ejemplo:
+//  presenter := supplymanager.NewItemView(caller)
 func NewItemView(caller router.Caller, opts ...view.Option) view.Presenter {
 	b := view.NewCallerLister(view.NewRecords().Caller(caller),
 		view.Ops{Module: ModelName, List: OpListItems, Save: OpUpsertItem, Update: OpUpdateItem, Delete: OpDeleteItem},
@@ -24,7 +25,8 @@ func NewItemView(caller router.Caller, opts ...view.Option) view.Presenter {
 
 // NewLocationView construye el Presenter de las ubicaciones.
 //
-//	presenter := supplymanager.NewLocationView(caller)
+// Ejemplo:
+//  presenter := supplymanager.NewLocationView(caller)
 func NewLocationView(caller router.Caller, opts ...view.Option) view.Presenter {
 	b := view.NewCallerLister(view.NewRecords().Caller(caller),
 		view.Ops{Module: ModelName, List: OpListLocations, Save: OpUpsertLocation, Update: OpUpdateLocation, Delete: OpDeleteLocation},
