@@ -6,11 +6,11 @@ import (
 	"webtyp.com/time"
 )
 
-// The operations that the generic view drives (save, update by ids and fields, delete by ids) carry no tenant on the wire:
-// the records carry theirs, and an id alone names one item, so these helpers resolve an item by id and then work with the
-// tenant the item itself stores. Everything that takes a tenant argument elsewhere in this module filters by it.
+// Las operaciones que maneja la vista genérica (guardar, actualizar por ids y campos, borrar por ids) no llevan tenant en la red:
+// los registros llevan el suyo, y un id por sí solo nombra un artículo, así que estos ayudantes resuelven un artículo por id y luego trabajan con el
+// tenant que el propio artículo almacena. Todo lo que toma un argumento de tenant en otra parte de este módulo filtra por él.
 
-// itemByID returns an item whatever its tenant, so that an operation sent by id alone can find its tenant.
+// itemByID devuelve un artículo sin importar su tenant, para que una operación enviada solo por id pueda encontrar su tenant.
 func (m *Module) itemByID(id string) (SupplyItem, error) {
 	var p SupplyItem
 	got, err := ReadOneSupplyItem(m.db.Query(&p).Where(SupplyItem_.Id).Eq(id), &p)
@@ -35,7 +35,10 @@ func (m *Module) locationByID(id string) (SupplyLocation, error) {
 	return *got, nil
 }
 
-// UpdateItem replaces an item with the record given: same id and tenant, every field validated again.
+// UpdateItem reemplaza un artículo con el registro dado: mismo id y tenant, validando cada campo de nuevo.
+//
+// Ejemplo:
+//  item, err := m.UpdateItem(SupplyItem{TenantId: "t1", Id: "1", Sku: "123", Name: "Guantes", Unit: UnitBox, IsActive: true})
 func (m *Module) UpdateItem(p SupplyItem) (SupplyItem, error) {
 	existing, err := getItem(m.db, p.TenantId, p.Id)
 	if err != nil {
@@ -61,7 +64,10 @@ func (m *Module) UpdateItem(p SupplyItem) (SupplyItem, error) {
 	return p, nil
 }
 
-// UpsertItem creates the item when it has no id or the id is unknown, otherwise updates it.
+// UpsertItem crea el artículo cuando no tiene id o el id es desconocido, de lo contrario lo actualiza.
+//
+// Ejemplo:
+//  item, err := m.UpsertItem(SupplyItem{TenantId: "t1", Sku: "123", Name: "Guantes", Unit: UnitBox, IsActive: true})
 func (m *Module) UpsertItem(p SupplyItem) (SupplyItem, error) {
 	if p.Id == "" {
 		return m.CreateItem(p)
@@ -74,8 +80,11 @@ func (m *Module) UpsertItem(p SupplyItem) (SupplyItem, error) {
 	return m.UpdateItem(p)
 }
 
-// PatchItems applies to the items named by ids only the fields named by fields, taking the values from rec: the
-// shape of the view's "update" operation. A field this module does not know is a ValidationError.
+// PatchItems aplica a los artículos nombrados por ids solo los campos nombrados por fields, tomando los valores de rec: la
+// forma de la operación "update" de la vista. Un campo que este módulo no conoce es un ValidationError.
+//
+// Ejemplo:
+//  err := m.PatchItems([]string{"1", "2"}, []string{"is_active"}, SupplyItem{IsActive: false})
 func (m *Module) PatchItems(ids, fields []string, rec SupplyItem) error {
 	for _, id := range ids {
 		current, err := m.itemByID(id)
@@ -105,7 +114,10 @@ func (m *Module) PatchItems(ids, fields []string, rec SupplyItem) error {
 	return nil
 }
 
-// DeactivateItem hides an item from new receipts without touching its history.
+// DeactivateItem oculta un artículo de nuevas recepciones sin tocar su historial.
+//
+// Ejemplo:
+//  err := m.DeactivateItem("t1", "1")
 func (m *Module) DeactivateItem(tenantId, id string) error {
 	p, err := getItem(m.db, tenantId, id)
 	if err != nil {
@@ -116,7 +128,10 @@ func (m *Module) DeactivateItem(tenantId, id string) error {
 	return m.db.Update(&p, orm.Eq(SupplyItem_.Id, p.Id), orm.Eq(SupplyItem_.TenantId, p.TenantId))
 }
 
-// DeleteItems removes items by id, each only if it has no batch (ErrItemInUse): the ledger keeps its history.
+// DeleteItems elimina artículos por id, cada uno solo si no tiene lote (ErrItemInUse): el libro mayor mantiene su historial.
+//
+// Ejemplo:
+//  err := m.DeleteItems([]string{"1", "2"})
 func (m *Module) DeleteItems(ids []string) error {
 	for _, id := range ids {
 		p, err := m.itemByID(id)
@@ -137,7 +152,10 @@ func (m *Module) DeleteItems(ids []string) error {
 	return nil
 }
 
-// UpdateLocation replaces a location with the record given.
+// UpdateLocation reemplaza una ubicación con el registro dado.
+//
+// Ejemplo:
+//  loc, err := m.UpdateLocation(SupplyLocation{TenantId: "t1", Id: "1", Name: "Depósito", IsActive: true})
 func (m *Module) UpdateLocation(l SupplyLocation) (SupplyLocation, error) {
 	existing, err := getLocation(m.db, l.TenantId, l.Id)
 	if err != nil {
@@ -165,7 +183,10 @@ func (m *Module) UpdateLocation(l SupplyLocation) (SupplyLocation, error) {
 	return l, nil
 }
 
-// UpsertLocation creates the location when it has no id or the id is unknown, otherwise updates it.
+// UpsertLocation crea la ubicación cuando no tiene id o el id es desconocido, de lo contrario la actualiza.
+//
+// Ejemplo:
+//  loc, err := m.UpsertLocation(SupplyLocation{TenantId: "t1", Name: "Depósito", IsActive: true})
 func (m *Module) UpsertLocation(l SupplyLocation) (SupplyLocation, error) {
 	if l.Id == "" {
 		return m.CreateLocation(l)
@@ -178,7 +199,10 @@ func (m *Module) UpsertLocation(l SupplyLocation) (SupplyLocation, error) {
 	return m.UpdateLocation(l)
 }
 
-// PatchLocations applies to the locations named by ids only the fields named by fields, taking the values from rec.
+// PatchLocations aplica a las ubicaciones nombradas por ids solo los campos nombrados por fields, tomando los valores de rec.
+//
+// Ejemplo:
+//  err := m.PatchLocations([]string{"1"}, []string{"is_active"}, SupplyLocation{IsActive: false})
 func (m *Module) PatchLocations(ids, fields []string, rec SupplyLocation) error {
 	for _, id := range ids {
 		current, err := m.locationByID(id)
@@ -204,7 +228,10 @@ func (m *Module) PatchLocations(ids, fields []string, rec SupplyLocation) error 
 	return nil
 }
 
-// DeleteLocations removes locations by id, each only if no stock level item references it (ErrLocationInUse).
+// DeleteLocations elimina ubicaciones por id, cada una solo si ningún nivel de stock la referencia (ErrLocationInUse).
+//
+// Ejemplo:
+//  err := m.DeleteLocations([]string{"1"})
 func (m *Module) DeleteLocations(ids []string) error {
 	for _, id := range ids {
 		l, err := m.locationByID(id)

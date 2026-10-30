@@ -6,13 +6,13 @@ import (
 	"webtyp.com/notify"
 )
 
-// Alert codes this module raises (notify.Alert.Code).
+// Códigos de alerta que este módulo emite (notify.Alert.Code).
 const (
 	AlertBelowMinimum = "supply.below_minimum"
 	AlertExpiring     = "supply.expiring"
 )
 
-// Source types of the alerts (notify.Ref.Type).
+// Tipos de origen de las alertas (notify.Ref.Type).
 const (
 	alertSourceItem   = "supply_item"
 	alertSourceReview = "supply_expiry_review"
@@ -25,8 +25,11 @@ const (
 	textExpiringHelp     lang.Text = "The daily review found batches with stock that are expired or expire soon."
 )
 
-// AlertKinds is the catalog of alerts this module raises, for the application's notify.Registry.
-// area is the application's notify.Area code (the same value as Deps.AlertArea).
+// AlertKinds es el catálogo de alertas que este módulo emite, para el notify.Registry de la aplicación.
+// area es el código notify.Area de la aplicación (el mismo valor que Deps.AlertArea).
+//
+// Ejemplo:
+//  registry.Register(supplymanager.AlertKinds("my_area"))
 func AlertKinds(area string) []notify.Kind {
 	return []notify.Kind{
 		{Code: AlertBelowMinimum, Name: textBelowMinimumName, Help: textBelowMinimumHelp, Area: area},
@@ -34,7 +37,7 @@ func AlertKinds(area string) []notify.Kind {
 	}
 }
 
-// raise publishes a when alerts are on; off (no Publisher or no AlertArea) it does nothing.
+// raise publica a cuando las alertas están activadas; si están desactivadas (sin Publisher o sin AlertArea) no hace nada.
 func (m *Module) raise(a notify.Alert) error {
 	if m.pub == nil || m.alertArea == "" {
 		return nil
@@ -43,7 +46,7 @@ func (m *Module) raise(a notify.Alert) error {
 	return notify.Raise(m.pub, a)
 }
 
-// totalItem is the item's stock over every location and batch.
+// totalItem es el stock del artículo en todas las ubicaciones y lotes.
 func (m *Module) totalItem(tenantId, id string) (float64, error) {
 	levels, err := m.ListStock(ListStockArgs{TenantId: tenantId, ItemId: id})
 	if err != nil {

@@ -91,7 +91,7 @@ Este módulo puede emitir alertas cuando `Deps.Publisher` y `Deps.AlertArea` est
 | `queries.go`, `reports.go` | las listas, `ListExpiring`, `ListLowStock` y los lectores |
 | `ops.go` | los nombres de operación, las formas de red que envía la vista genérica, `MountOperations` y cada manejador |
 | `view.go` | `NewItemView`, `NewLocationView` |
-| `migrate/migrate.go` | crea las cinco tablas en orden de clave foránea |
+| `migrate/migrate.go` | usa ddl.Sync para crear o sincronizar las cinco tablas. Flujo: https://github.com/webtyp/ddl/blob/main/docs/diagrams/SYNC_FLOW.md |
 | `ui/`, `seed/`, `web/` | el grupo de pantallas "Insumos", los datos de demostración, la demo en el navegador |
 | `lang.json` | el español de las etiquetas del formulario y de las opciones (generado con `langc sync .`) |
 | `conflict_internal_test.go` | el test de revisión obsoleta (a nivel raíz, justificado) |

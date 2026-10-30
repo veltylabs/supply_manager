@@ -4,10 +4,13 @@ import (
 	"slices"
 )
 
-// defaultMovementLimit is how many movements list_movements returns when the caller gives no limit.
+// defaultMovementLimit es el número de movimientos que devuelve list_movements cuando el llamador no especifica un límite.
 const defaultMovementLimit = 100
 
-// ListBatches returns the batches of an item.
+// ListBatches devuelve los lotes de un artículo.
+//
+// Ejemplo:
+//  batches, err := m.ListBatches("t1", "1")
 func (m *Module) ListBatches(tenantId, itemId string) ([]SupplyBatch, error) {
 	var proxy SupplyBatch
 	qb := m.db.Query(&proxy).Where(SupplyBatch_.TenantId).Eq(tenantId).Where(SupplyBatch_.ItemId).Eq(itemId)
@@ -26,7 +29,7 @@ func derefBatches(list SupplyBatchList) []SupplyBatch {
 	return out
 }
 
-// batchIDsOf returns the ids of the batches of an item.
+// batchIDsOf devuelve los ids de los lotes de un artículo.
 func (m *Module) batchIDsOf(tenantId, itemId string) ([]string, error) {
 	batches, err := m.ListBatches(tenantId, itemId)
 	if err != nil {
@@ -39,7 +42,10 @@ func (m *Module) batchIDsOf(tenantId, itemId string) ([]string, error) {
 	return ids, nil
 }
 
-// ListStock returns the stock levels with quantity > 0, optionally of one item and/or one location.
+// ListStock devuelve los niveles de stock con cantidad > 0, opcionalmente de un artículo y/o una ubicación.
+//
+// Ejemplo:
+//  stock, err := m.ListStock(ListStockArgs{TenantId: "t1", ItemId: "1"})
 func (m *Module) ListStock(a ListStockArgs) ([]SupplyStockLevel, error) {
 	var proxy SupplyStockLevel
 	qb := m.db.Query(&proxy).Where(SupplyStockLevel_.TenantId).Eq(a.TenantId)
@@ -69,8 +75,11 @@ func (m *Module) ListStock(a ListStockArgs) ([]SupplyStockLevel, error) {
 	return out, nil
 }
 
-// ListMovements returns the ledger, newest first, optionally of one item or one batch and between two Unix seconds
-// (a zero bound is open). Without a limit it returns defaultMovementLimit entries.
+// ListMovements devuelve el libro mayor, desde el más reciente, opcionalmente de un artículo o un lote y entre dos segundos Unix
+// (un límite de cero significa abierto). Sin un límite, devuelve defaultMovementLimit entradas.
+//
+// Ejemplo:
+//  movs, err := m.ListMovements(ListMovementsArgs{TenantId: "t1", ItemId: "1", Limit: 10})
 func (m *Module) ListMovements(a ListMovementsArgs) ([]SupplyMovement, error) {
 	var proxy SupplyMovement
 	qb := m.db.Query(&proxy).Where(SupplyMovement_.TenantId).Eq(a.TenantId)
@@ -97,7 +106,7 @@ func (m *Module) ListMovements(a ListMovementsArgs) ([]SupplyMovement, error) {
 		}
 		out = append(out, *mv)
 	}
-	slices.Reverse(out) // the store returns insertion order: reversed, it is the tie-break of entries written in the same second
+	slices.Reverse(out) // el almacén devuelve el orden de inserción: al revés, sirve como desempate para entradas escritas en el mismo segundo
 	slices.SortStableFunc(out, func(x, y SupplyMovement) int {
 		switch {
 		case x.CreatedAt > y.CreatedAt:
@@ -117,12 +126,18 @@ func (m *Module) ListMovements(a ListMovementsArgs) ([]SupplyMovement, error) {
 	return out, nil
 }
 
-// GetBatch returns one batch of the tenant.
+// GetBatch devuelve un lote del tenant.
+//
+// Ejemplo:
+//  batch, err := m.GetBatch("t1", "1")
 func (m *Module) GetBatch(tenantId, id string) (SupplyBatch, error) {
 	return getBatch(m.db, tenantId, id)
 }
 
-// ListItems returns the items of a tenant, by name. active_only hides the deactivated ones; limit 0 = no limit.
+// ListItems devuelve los artículos de un tenant, por nombre. active_only oculta los desactivados; limit 0 = sin límite.
+//
+// Ejemplo:
+//  items, err := m.ListItems(ListItemsArgs{TenantId: "t1", ActiveOnly: true, Limit: 10})
 func (m *Module) ListItems(a ListItemsArgs) ([]SupplyItem, error) {
 	var proxy SupplyItem
 	qb := m.db.Query(&proxy).Where(SupplyItem_.TenantId).Eq(a.TenantId)
@@ -141,7 +156,10 @@ func (m *Module) ListItems(a ListItemsArgs) ([]SupplyItem, error) {
 	return page(out, int(a.Offset), int(a.Limit)), nil
 }
 
-// ListLocations returns the locations of a tenant, by name.
+// ListLocations devuelve las ubicaciones de un tenant, por nombre.
+//
+// Ejemplo:
+//  locs, err := m.ListLocations(ListLocationsArgs{TenantId: "t1", ActiveOnly: true})
 func (m *Module) ListLocations(a ListLocationsArgs) ([]SupplyLocation, error) {
 	var proxy SupplyLocation
 	qb := m.db.Query(&proxy).Where(SupplyLocation_.TenantId).Eq(a.TenantId)
@@ -160,7 +178,7 @@ func (m *Module) ListLocations(a ListLocationsArgs) ([]SupplyLocation, error) {
 	return out, nil
 }
 
-// compareText orders two strings by byte order.
+// compareText ordena dos cadenas por orden de bytes.
 func compareText(a, b string) int {
 	switch {
 	case a < b:
@@ -171,7 +189,7 @@ func compareText(a, b string) int {
 	return 0
 }
 
-// page returns the slice from offset, at most limit long; limit 0 = to the end.
+// page devuelve el segmento desde offset, con una longitud máxima de limit; limit 0 = hasta el final.
 func page[T any](list []T, offset, limit int) []T {
 	if offset > 0 {
 		if offset >= len(list) {

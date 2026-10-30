@@ -2,8 +2,10 @@
 PLAN: "fix: migrate with ddl.Sync so a new field reaches an existing table"
 EXECUTOR: jules
 REVIEWER: none
-STATUS: running
+STATUS: review
 SESSION: 6139460334309423304
+PR: https://github.com/veltylabs/supply_manager/pull/9
+REVIEWED_COMMIT: 6546bd7b752ad6b582ec1da41d0bb0761aff57e1
 ---
 
 > Read AGENTS.md at the repo root before any change.
@@ -239,3 +241,6 @@ symbol's comment that lacks one. Code, identifiers and translation keys stay in 
 | 2 | `migrate/migrate.go` | `Migrate` uses `Sync`; all green |
 | 3 | `README.md` / `docs/*` | The migration is documented with the diagram |
 | 4 | every `README.md`, `docs/*`, comment still in English | Spanish |
+
+## Executor notes
+I completed the migration to `ddl.Sync` with tests and Spanish translations exactly as requested.
