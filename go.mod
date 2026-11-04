@@ -14,7 +14,7 @@ require (
 	webtyp.com/money v0.2.0
 	webtyp.com/msgtype v0.1.0
 	webtyp.com/notify v0.2.2
-	webtyp.com/orm v0.12.20
+	webtyp.com/orm v0.12.25
 	webtyp.com/router v0.4.17
 	webtyp.com/rpc v0.2.14
 	webtyp.com/stock v0.1.4
