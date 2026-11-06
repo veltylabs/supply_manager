@@ -17,7 +17,7 @@ const (
 //  presenter := supplymanager.NewItemView(caller)
 func NewItemView(caller router.Caller, opts ...view.Option) view.Presenter {
 	b := view.NewCallerLister(view.NewRecords().Caller(caller),
-		view.Ops{Module: ModelName, List: OpListItems, Save: OpUpsertItem, Update: OpUpdateItem, Delete: OpDeleteItem},
+		view.Ops{Module: ModelName, List: OpListItems, Save: OpUpsertItem, Update: OpUpdateItem, Delete: OpDeleteItem, Page: view.Page{First: view.All}},
 		func() model.ModelSlice { return &SupplyItemList{} })
 	allOpts := append([]view.Option{view.WithTitle(titleItems)}, opts...)
 	return view.New(b, &SupplyItem{Unit: UnitPiece, IsActive: true}, allOpts...)
@@ -29,7 +29,7 @@ func NewItemView(caller router.Caller, opts ...view.Option) view.Presenter {
 //  presenter := supplymanager.NewLocationView(caller)
 func NewLocationView(caller router.Caller, opts ...view.Option) view.Presenter {
 	b := view.NewCallerLister(view.NewRecords().Caller(caller),
-		view.Ops{Module: ModelName, List: OpListLocations, Save: OpUpsertLocation, Update: OpUpdateLocation, Delete: OpDeleteLocation},
+		view.Ops{Module: ModelName, List: OpListLocations, Save: OpUpsertLocation, Update: OpUpdateLocation, Delete: OpDeleteLocation, Page: view.Page{First: view.All}},
 		func() model.ModelSlice { return &SupplyLocationList{} })
 	allOpts := append([]view.Option{view.WithTitle(titleLocations)}, opts...)
 	return view.New(b, &SupplyLocation{IsActive: true}, allOpts...)

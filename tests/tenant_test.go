@@ -5,10 +5,14 @@ import (
 	"testing"
 
 	supplymanager "github.com/veltylabs/supply_manager"
+	"webtyp.com/orm"
+	"webtyp.com/storage/mem"
 )
 
 func TestTenantIsolation(t *testing.T) {
-	m := newModule(t)
+	db := orm.New(mem.New())
+	m, _ := supplymanager.New(db, supplymanager.Deps{TenantID: testTenant, IDs: &testIDGen{}})
+
 	item := newItem(t, m, "i1")
 	loc := newLocation(t, m, "Loc")
 
@@ -21,7 +25,8 @@ func TestTenantIsolation(t *testing.T) {
 
 	tenant2 := "tenant-2"
 
-	items, _ := m.ListItems(supplymanager.ListItemsArgs{TenantId: tenant2})
+	m2, _ := supplymanager.New(db, supplymanager.Deps{TenantID: tenant2, IDs: &testIDGen{}})
+	items, _ := m2.ListItems("", "", 0)
 	if len(items) != 0 {
 		t.Errorf("expected empty items list, got %v", len(items))
 	}

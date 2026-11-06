@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	supplymanager "github.com/veltylabs/supply_manager"
+	"webtyp.com/router/loopback"
+	"webtyp.com/view"
 )
 
 func TestCreateItem_StoresIt(t *testing.T) {
@@ -114,16 +116,6 @@ func TestDeactivateItem(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	items, err := m.ListItems(supplymanager.ListItemsArgs{TenantId: testTenant, ActiveOnly: true})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	for _, item := range items {
-		if item.Id == a1.Id {
-			t.Errorf("expected deactivated item to not be listed")
-		}
-	}
-
 	_, err = m.ReceiveStock(supplymanager.ReceiveStockArgs{
 		TenantId: testTenant, ItemId: a1.Id, LocationId: l1.Id, BatchNumber: "B1", Quantity: 10,
 	})
@@ -171,7 +163,7 @@ func TestDeleteItems(t *testing.T) {
 
 func TestListItems_PagedAndFiltered(t *testing.T) {
 	m := newModule(t)
-	// A, B, C created in order; B deactivated
+	// A, B, C created in order
 	a := supplymanager.SupplyItem{TenantId: testTenant, Sku: "1", Name: "A", Unit: "BOX", IsActive: true}
 	a, _ = m.CreateItem(a)
 	b := supplymanager.SupplyItem{TenantId: testTenant, Sku: "2", Name: "B", Unit: "BOX", IsActive: true}
@@ -181,7 +173,7 @@ func TestListItems_PagedAndFiltered(t *testing.T) {
 
 	_ = m.DeactivateItem(testTenant, b.Id)
 
-	items, err := m.ListItems(supplymanager.ListItemsArgs{TenantId: testTenant, Limit: 2, Offset: 1})
+	items, err := m.ListItems("", a.Id, 2)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -189,12 +181,12 @@ func TestListItems_PagedAndFiltered(t *testing.T) {
 		t.Errorf("expected B, C, got %v", items)
 	}
 
-	itemsActive, err := m.ListItems(supplymanager.ListItemsArgs{TenantId: testTenant, ActiveOnly: true})
+	searched, err := m.ListItems("C", "", 10)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(itemsActive) != 2 || itemsActive[0].Name != "A" || itemsActive[1].Name != "C" {
-		t.Errorf("expected A, C, got %v", itemsActive)
+	if len(searched) != 1 || searched[0].Name != "C" {
+		t.Errorf("expected C, got %v", searched)
 	}
 }
 
@@ -333,6 +325,50 @@ func TestInactiveLocationRefusesReceipts(t *testing.T) {
 	})
 	if model.KindOf(err) != model.ErrorInvalid {
 		t.Errorf("expected ErrLocationInactive, got %v", err)
+	}
+}
+
+func TestListItems_ListAcceptsListArgs(t *testing.T) {
+	m := newModule(t)
+	c := loopback.New(m)
+	a := supplymanager.SupplyItem{TenantId: testTenant, Sku: "1", Name: "A", Unit: "BOX", IsActive: true}
+	a, _ = m.CreateItem(a)
+	b := supplymanager.SupplyItem{TenantId: testTenant, Sku: "2", Name: "B", Unit: "BOX", IsActive: true}
+	b, _ = m.CreateItem(b)
+
+	var items supplymanager.SupplyItemList
+	if err := call(t, c, supplymanager.OpListItems, &view.ListArgs{Limit: 1}, &items); err != nil || len(items) != 1 {
+		t.Fatalf("limit 1: %v, %d items", err, len(items))
+	}
+	items = nil
+	if err := call(t, c, supplymanager.OpListItems, &view.ListArgs{Search: "B"}, &items); err != nil || len(items) != 1 || items[0].Name != "B" {
+		t.Fatalf("search B: %v, items %+v", err, items)
+	}
+	items = nil
+	if err := call(t, c, supplymanager.OpListItems, &view.ListArgs{After: a.Id}, &items); err != nil || len(items) != 1 || items[0].Name != "B" {
+		t.Fatalf("after A: %v, items %+v", err, items)
+	}
+}
+
+func TestListLocations_ListAcceptsListArgs(t *testing.T) {
+	m := newModule(t)
+	c := loopback.New(m)
+	a := supplymanager.SupplyLocation{TenantId: testTenant, Name: "A", IsActive: true}
+	a, _ = m.CreateLocation(a)
+	b := supplymanager.SupplyLocation{TenantId: testTenant, Name: "B", IsActive: true}
+	b, _ = m.CreateLocation(b)
+
+	var locs supplymanager.SupplyLocationList
+	if err := call(t, c, supplymanager.OpListLocations, &view.ListArgs{Limit: 1}, &locs); err != nil || len(locs) != 1 {
+		t.Fatalf("limit 1: %v, %d locs", err, len(locs))
+	}
+	locs = nil
+	if err := call(t, c, supplymanager.OpListLocations, &view.ListArgs{Search: "B"}, &locs); err != nil || len(locs) != 1 || locs[0].Name != "B" {
+		t.Fatalf("search B: %v, locs %+v", err, locs)
+	}
+	locs = nil
+	if err := call(t, c, supplymanager.OpListLocations, &view.ListArgs{After: a.Id}, &locs); err != nil || len(locs) != 1 || locs[0].Name != "B" {
+		t.Fatalf("after A: %v, locs %+v", err, locs)
 	}
 }
 func init() {

@@ -4,6 +4,7 @@ import (
 	"webtyp.com/model"
 	"webtyp.com/router"
 	"webtyp.com/rpc"
+	"webtyp.com/view"
 )
 
 // Nombres de las operaciones, tal como las ven el transporte y la vista: "<ModelName>.<name>".
@@ -165,7 +166,7 @@ func readStrings(r model.FieldReader, name string) []string {
 // Ejemplo:
 //  m.MountOperations(router)
 func (m *Module) MountOperations(reg router.OperationRegistry) {
-	reg.Operation(OpListItems, m.opListItems).Requires(resItem, model.Read).Accepts(&ListItemsArgs{})
+	reg.Operation(OpListItems, m.opListItems).Requires(resItem, model.Read).Accepts(&view.ListArgs{})
 	reg.Operation(OpGetItem, m.opGetItem).Requires(resItem, model.Read).Accepts(&IdArgs{})
 	reg.Operation(OpCreateItem, m.opCreateItem).Requires(resItem, model.Create).Accepts(&SupplyItem{})
 	reg.Operation(OpUpdateItem, m.opUpdateItem).Requires(resItem, model.Update).Accepts(&UpdateItemArgs{})
@@ -173,7 +174,7 @@ func (m *Module) MountOperations(reg router.OperationRegistry) {
 	reg.Operation(OpDeactivateItem, m.opDeactivateItem).Requires(resItem, model.Update).Accepts(&IdArgs{})
 	reg.Operation(OpDeleteItem, m.opDeleteItem).Requires(resItem, model.Delete).Accepts(&DeleteIdsArgs{})
 
-	reg.Operation(OpListLocations, m.opListLocations).Requires(resLocation, model.Read).Accepts(&ListLocationsArgs{})
+	reg.Operation(OpListLocations, m.opListLocations).Requires(resLocation, model.Read).Accepts(&view.ListArgs{})
 	reg.Operation(OpUpsertLocation, m.opUpsertLocation).Requires(resLocation, model.Create|model.Update).Accepts(&UpsertLocationArgs{})
 	reg.Operation(OpUpdateLocation, m.opUpdateLocation).Requires(resLocation, model.Update).Accepts(&UpdateLocationArgs{})
 	reg.Operation(OpDeleteLocation, m.opDeleteLocation).Requires(resLocation, model.Delete).Accepts(&DeleteIdsArgs{})
@@ -205,12 +206,12 @@ func answer(ctx router.Context, v model.Encodable, err error) {
 }
 
 func (m *Module) opListItems(ctx router.Context) {
-	var args ListItemsArgs
+	var args view.ListArgs
 	if err := ctx.Decode(&args); err != nil {
 		rpc.WriteError(ctx, ErrCannotRead)
 		return
 	}
-	items, err := m.ListItems(args)
+	items, err := m.ListItems(args.Search, args.After, view.Cap(args.Limit))
 	list := make(SupplyItemList, len(items))
 	for i := range items {
 		list[i] = &items[i]
@@ -308,12 +309,12 @@ func (m *Module) opDeleteItem(ctx router.Context) {
 }
 
 func (m *Module) opListLocations(ctx router.Context) {
-	var args ListLocationsArgs
+	var args view.ListArgs
 	if err := ctx.Decode(&args); err != nil {
 		rpc.WriteError(ctx, ErrCannotRead)
 		return
 	}
-	items, err := m.ListLocations(args)
+	items, err := m.ListLocations(args.Search, args.After, view.Cap(args.Limit))
 	list := make(SupplyLocationList, len(items))
 	for i := range items {
 		list[i] = &items[i]

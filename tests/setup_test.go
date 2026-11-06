@@ -22,7 +22,7 @@ func (g *testIDGen) NewID() string {
 // newModule is a Module over an in-memory database, without events.
 func newModule(t *testing.T) *supplymanager.Module {
 	t.Helper()
-	m, err := supplymanager.New(orm.New(mem.New()), supplymanager.Deps{IDs: &testIDGen{}})
+	m, err := supplymanager.New(orm.New(mem.New()), supplymanager.Deps{TenantID: testTenant, IDs: &testIDGen{}})
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
