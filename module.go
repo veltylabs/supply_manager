@@ -24,6 +24,7 @@ const (
 
 // Deps son las dependencias que el módulo necesita de la aplicación que lo compone.
 type Deps struct {
+	TenantID   string            // requerido: el tenant al que pertenece este módulo
 	IDs        model.IDGenerator // requerido: el módulo nunca construye un generador
 	Publisher  events.Publisher  // opcional: nil desactiva los eventos y los hechos de costo
 	MoneyScope string            // opcional: el área del negocio a la que pertenecen los hechos de costo; "" desactiva los hechos de costo
@@ -32,6 +33,7 @@ type Deps struct {
 
 type Module struct {
 	db        *orm.DB
+	tenantID  string
 	ids       model.IDGenerator
 	pub       events.Publisher
 	scope     string
@@ -42,7 +44,7 @@ func New(db *orm.DB, deps Deps) (*Module, error) {
 	if deps.IDs == nil {
 		return nil, fmt.Err(msgNeedIDs)
 	}
-	return &Module{db: db, ids: deps.IDs, pub: deps.Publisher, scope: deps.MoneyScope, alertArea: deps.AlertArea}, nil
+	return &Module{db: db, tenantID: deps.TenantID, ids: deps.IDs, pub: deps.Publisher, scope: deps.MoneyScope, alertArea: deps.AlertArea}, nil
 }
 
 // ModelName devuelve el nombre del modelo.

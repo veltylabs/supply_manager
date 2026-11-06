@@ -134,15 +134,22 @@ func (m *Module) GetBatch(tenantId, id string) (SupplyBatch, error) {
 	return getBatch(m.db, tenantId, id)
 }
 
-// ListItems devuelve los artículos de un tenant, por nombre. active_only oculta los desactivados; limit 0 = sin límite.
+// ListItems devuelve los artículos del tenant del módulo, buscando por nombre y filtrando por página.
 //
 // Ejemplo:
-//  items, err := m.ListItems(ListItemsArgs{TenantId: "t1", ActiveOnly: true, Limit: 10})
-func (m *Module) ListItems(a ListItemsArgs) ([]SupplyItem, error) {
+//  items, err := m.ListItems("term", "", 50)
+func (m *Module) ListItems(search, after string, limit int64) ([]SupplyItem, error) {
 	var proxy SupplyItem
-	qb := m.db.Query(&proxy).Where(SupplyItem_.TenantId).Eq(a.TenantId)
-	if a.ActiveOnly {
-		qb = qb.Where(SupplyItem_.IsActive).Eq(true)
+	qb := m.db.Query(&proxy).Where(SupplyItem_.TenantId).Eq(m.tenantID)
+	if search != "" {
+		qb = qb.Where(SupplyItem_.Name).Like("%" + search + "%")
+	}
+	if after != "" {
+		qb = qb.Where(SupplyItem_.Id).Gt(after)
+	}
+	qb = qb.OrderBy(SupplyItem_.Id).Asc()
+	if limit > 0 {
+		qb = qb.Limit(int(limit))
 	}
 	list, err := ReadAllSupplyItem(qb)
 	if err != nil {
@@ -152,19 +159,25 @@ func (m *Module) ListItems(a ListItemsArgs) ([]SupplyItem, error) {
 	for i, p := range list {
 		out[i] = *p
 	}
-	slices.SortFunc(out, func(x, y SupplyItem) int { return compareText(x.Name, y.Name) })
-	return page(out, int(a.Offset), int(a.Limit)), nil
+	return out, nil
 }
 
-// ListLocations devuelve las ubicaciones de un tenant, por nombre.
+// ListLocations devuelve las ubicaciones del tenant del módulo, buscando por nombre y filtrando por página.
 //
 // Ejemplo:
-//  locs, err := m.ListLocations(ListLocationsArgs{TenantId: "t1", ActiveOnly: true})
-func (m *Module) ListLocations(a ListLocationsArgs) ([]SupplyLocation, error) {
+//  locs, err := m.ListLocations("term", "", 50)
+func (m *Module) ListLocations(search, after string, limit int64) ([]SupplyLocation, error) {
 	var proxy SupplyLocation
-	qb := m.db.Query(&proxy).Where(SupplyLocation_.TenantId).Eq(a.TenantId)
-	if a.ActiveOnly {
-		qb = qb.Where(SupplyLocation_.IsActive).Eq(true)
+	qb := m.db.Query(&proxy).Where(SupplyLocation_.TenantId).Eq(m.tenantID)
+	if search != "" {
+		qb = qb.Where(SupplyLocation_.Name).Like("%" + search + "%")
+	}
+	if after != "" {
+		qb = qb.Where(SupplyLocation_.Id).Gt(after)
+	}
+	qb = qb.OrderBy(SupplyLocation_.Id).Asc()
+	if limit > 0 {
+		qb = qb.Limit(int(limit))
 	}
 	list, err := ReadAllSupplyLocation(qb)
 	if err != nil {
@@ -174,7 +187,6 @@ func (m *Module) ListLocations(a ListLocationsArgs) ([]SupplyLocation, error) {
 	for i, l := range list {
 		out[i] = *l
 	}
-	slices.SortFunc(out, func(x, y SupplyLocation) int { return compareText(x.Name, y.Name) })
 	return out, nil
 }
 

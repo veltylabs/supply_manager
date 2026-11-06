@@ -46,7 +46,7 @@ func TestListLowStock(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	withMin, _ := m.ListItems(supplymanager.ListItemsArgs{TenantId: testTenant})
+	withMin, _ := m.ListItems("", "", 0)
 	var minID string
 	for _, p := range withMin {
 		if p.Sku == "withmin" {

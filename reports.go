@@ -62,7 +62,8 @@ func (m *Module) ListExpiring(a ListExpiringArgs) ([]ExpiringStock, error) {
 // Ejemplo:
 //  low, err := m.ListLowStock(ListLowStockArgs{TenantId: "t1"})
 func (m *Module) ListLowStock(a ListLowStockArgs) ([]LowStock, error) {
-	items, err := m.ListItems(ListItemsArgs{TenantId: a.TenantId, ActiveOnly: true})
+	var proxy SupplyItem
+	items, err := ReadAllSupplyItem(m.db.Query(&proxy).Where(SupplyItem_.TenantId).Eq(m.tenantID).Where(SupplyItem_.IsActive).Eq(true))
 	if err != nil {
 		return nil, err
 	}
