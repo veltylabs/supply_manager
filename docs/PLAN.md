@@ -2,16 +2,15 @@
 PLAN: "refactor!: supply_manager on the crud-by-declaration framework — Allow and Rules in definition.go, persistence by crud, only domain rules in rule files"
 EXECUTOR: jules
 REVIEWER: none
-STATUS: running
-SESSION: 1130740075781428916
 ---
 
 > Read AGENTS.md at the repo root before any change.
 > **Finish by yourself:** when the delivery check passes, commit, push and open the pull request. Never ask whether to
 > proceed or finalize — nobody answers, and a session that waits ends without your work. Commit after every stage.
 > Never run `git reset`, `git restore`, `git checkout -- <file>` or `git stash` on your own work.
+> **Publishing:** you publish only by OPENING THE PULL REQUEST (a `git push` from your sandbox does not reach GitHub). Open it after Stage 3 with whatever compiles and keep committing to it.
+> **Never ask a yes/no question about progress**; ask only when a signature in this plan is wrong, and name the symbol.
 > Never edit `definition_gen.go`: a build error there means `definition.go` or a rule file is wrong; fix that and run `definitionc` again.
-> This plan is dispatched in one wave with the other 11 modules without external calls (D53), after `patient_directory` (the reference) was executed and approved by the owner.
 
 
 # Plan: `supply_manager` on the crud-by-declaration framework
@@ -25,11 +24,12 @@ Reference implementation of the same migration (read it first, copy its shape): 
 ```bash
 go install webtyp.com/devflow/cmd/gotest@latest
 go install webtyp.com/lang/cmd/langc@latest
-go install webtyp.com/definitionc/cmd/definitionc@v0.1.41
-go get webtyp.com/model@v0.2.18 webtyp.com/crud@v0.0.11 webtyp.com/orm@v0.12.30 webtyp.com/storage@v0.2.1 webtyp.com/ddl@v0.0.49 webtyp.com/router@v0.4.21 webtyp.com/definitionc@v0.1.41 webtyp.com/view@v0.6.72 webtyp.com/appkit@v0.2.33 webtyp.com/rpc@v0.2.21
+go install webtyp.com/definitionc/cmd/definitionc@v0.1.43
+go get webtyp.com/model@v0.2.20 webtyp.com/crud@v0.0.14 webtyp.com/orm@v0.12.33 webtyp.com/storage@v0.2.2 webtyp.com/ddl@v0.0.49 webtyp.com/router@v0.4.22 webtyp.com/definitionc@v0.1.43 webtyp.com/view@v0.6.74 webtyp.com/appkit@v0.2.36 webtyp.com/rpc@v0.2.21
 ```
-Remove every `replace` from `go.mod`; `go mod tidy`. Before any change check, with `go doc`, that these exist: `model.ModuleDefinition`, `model.Rules` (`model.AddMyBusinessRule`, `model.HaveNoBusinessRule`), `crud.CurrentUser`, `crud.RuleAnswer`, `crud.Topic`, `crud.Loopback`, and that `definitionc` writes a `definition_gen.go` containing `func (m *Module) MountOperations(`. If one is missing, stop and say so in the PR.
-Prerequisite of the whole wave: `patient_directory` was executed, reviewed and approved by the owner; it is the reference and the 17 other modules are dispatched together after it.
+Remove every `replace` from `go.mod`; `go mod tidy`.
+`definitionc` is installed in `$(go env GOPATH)/bin`, which is not on the PATH of a fresh shell: write `export PATH="$PATH:$(go env GOPATH)/bin"` in the SAME command that runs it. **`definitionc` rewrites `go.mod` to older versions on every run: after EVERY run repeat the `go get` line above and `go mod tidy`.** If a module cannot be fetched, stop and say so in the PR; never write a hash by hand.
+Before any change check, with `go doc`, that these exist: `model.ModuleDefinition`, `model.Rules` (`model.AddMyBusinessRule`, `model.HaveNoBusinessRule`), `crud.CurrentUser`, `crud.RuleAnswer`, `crud.Topic`, `crud.LoopbackActingAs`, and that `definitionc` writes a `definition_gen.go` containing `func (m *Module) MountOperations(`. If one is missing, stop and say so in the PR.
 
 ## Lessons of the reference module (`patient_directory`, executed locally)
 
@@ -58,7 +58,7 @@ A module writes: `definition.go` (`var Definition = model.ModuleDefinition{…}`
 | Search (Read of a table) | `func (p *X) Search(a crud.CurrentUser, filter *X, text string, m *Module) ([]storage.Condition, error)` — AND conditions only; it runs on every read, `text` may be `""`, and `filter` is a record of the entity with only the fields the caller sent (D52: the entity is its own filter) |
 | Read (model without a table) | `func (p *X) Read(a crud.CurrentUser, filter *X, args crud.ReadArgs, m *Module) (model.ModelSlice, error)` (`filter` carries the fields the caller sent, D52) |
 
-A rule ends with `return crud.ApplyAndPublish, nil` (saves and announces) or `crud.ApplyWithoutPublishing` (saves without announcing); a rejection is `return 0, err`. It queries with `tx`, never with `m.db`. To write another row it calls `tx.Create`/`tx.UpdateFields`. The old `Committed` hook does not exist: `crud` publishes.
+A rule ends with `return crud.ApplyAndPublish(), nil` (saves and announces) or `return crud.ApplyWithoutPublishing(), nil` (saves without announcing); a rejection is `return crud.RuleAnswer{}, err`. It queries with `tx`, never with `m.db`. To write another row it calls `tx.Create`/`tx.UpdateFields`. The old `Committed` hook does not exist: `crud` publishes.
 
 ## Tables, stores and rules
 
@@ -88,10 +88,10 @@ A read model is a `model.Definition` **without** `DB:` marks, with `Allow: model
 
 | Today | After |
 |---|---|
-| `list_*/get_* of products/items, locations, batches, stock, movements` | `<table>_r` (with `id` for one) |
-| `create_*/update_*/upsert_* of products/items, locations` | `<table>_c` / `<table>_u` |
-| `deactivate_*` | `<table>_u` with `["is_active"]` |
-| `delete_*` | `<table>_d` |
+| `list_*/get_* of products/items, locations, batches, stock, movements` | `<table>.read` (with `id` for one) |
+| `create_*/update_*/upsert_* of products/items, locations` | `<table>.create` / `<table>.update` |
+| `deactivate_*` | `<table>.update` with `["is_active"]` |
+| `delete_*` | `<table>.delete` |
 | `receive_stock` | `supply_operation.create` with `kind: "receive"` |
 | `register_entry` | `supply_operation.create` with `kind: "entry"` |
 | `register_output` | `supply_operation.create` with `kind: "output"` |
@@ -99,68 +99,17 @@ A read model is a `model.Definition` **without** `DB:` marks, with `Allow: model
 | `list_expiring` | read model `ExpiringStock` |
 | `list_low_stock` | read model `LowStock` |
 
-## Stage 1 — `definition.go`
+## Stages (do them in order; commit after each)
 
-- Set `Allow` on each table exactly as in «Tables, stores and rules»; a table not listed there gets no `Allow` (internal).
-- Mark `ServerOnly: true`: `tenant_id`, `created_at`, `updated_at`, and every field the server fills (`actor_id`, `movement_ids`, `cost` and every computed amount).
-- Delete every `*Args` / `*Result` definition that only carried a removed operation (keep `ReceiveStockArgsModel`, `RegisterEntryArgsModel`, `RegisterOutputArgsModel`, `TransferStockArgsModel` with `Wire: true` — the readers `ReceiveStock`… take them — and `ListExpiringArgsModel` renamed to `ExpiringFilterModel`, `Wire: true`)
-  (`grep -n "ArgsModel\|ResultModel" model.go` → only the ones this plan keeps).
-- New table `SupplyOperationModel` (name `supply_operation`) with: `id` (PK), `tenant_id`, `kind` (`input.Select()` with the four constants `OperationReceive = "receive"`, `OperationEntry = "entry"`, `OperationOutput = "output"`, `OperationTransfer = "transfer"`), and the union of the fields of `ReceiveStockArgsModel`, `RegisterEntryArgsModel`, `RegisterOutputArgsModel`, `TransferStockArgsModel` (same names and kinds, `OmitEmpty` where only some kinds use them), plus `actor_id`, `movement_ids` (`model.Text()`, comma-joined), `created_at`. Add it to `migrate/` (`Sync`). A field a kind needs and lacks → field error from the rule.
-- **Keep every `*Args` model that an exported reader's signature still uses** (`grep -n "^func (m \*Module) [A-Z][A-Za-z]*([^)]*Args" *.go` lists them): mark each `Wire: true`; delete only the `*Args` no remaining signature uses.
-- D52 (the entity is its own filter): a filter model (`*Filter`, `*FilterModel`, an `*ArgsModel` that only carried filter values) is not kept: its fields become fields of the read model or table (`OmitEmpty`), and the rule reads them from its receiver; delete the filter type and its `Wire`/`NewFilter` plumbing.
-- Add `var Definition = model.ModuleDefinition{Name: "supply_manager", Entities: []model.Definition{…every table and read model of this plan…}}` and, on every table and read model, `Rules` as «Tables, stores and rules» says (`AddMyBusinessRule` where a rule is named, `HaveNoBusinessRule` for the other allowed actions; a read model: `Read: model.AddMyBusinessRule`). Delete the hand topics (`Topic*`) and `Err*`/resources no code uses any more.
-
-## Stage 2 — `module.go`
-
-`Deps` keeps its fields; add `IDs model.IDGenerator` (required, `depErr("IDs")` when nil) if it is missing.
-`Module` gains `store *orm.Store`, built once in `New`: `m.store = orm.TenantStore(db, deps.TenantID, deps.IDs)`.
-Delete the hand-written persistence (create/update/upsert/patch/delete/list/get bodies that only move rows) once its rules moved to the rule files: the row-moving bodies of every create/update/upsert/patch/deactivate/delete/list/get of products/items and locations; `ReceiveStock`, `RegisterEntry`, `RegisterOutput`, `TransferStock` keep their signatures only as readers (below) and call the same rule logic inside `m.store.Atomic`.
-
-## Stage 3 — generate, then write the rules
-
-1. Delete `ops.go`, `crud.go`, `queries.go`, `model_crud.go`, `model_orm.go` and `definition_crud.go` (those that exist). Run `definitionc`: it writes one `definition_gen.go` (the types, the schemas and, on `Module`, `ModelName()`, `Definition()`, `MountOperations()`) and the skeleton `rule_<entity>_<verb>.go` of every action declared `AddMyBusinessRule`.
-2. Add `store.go`: for each table of «Tables, stores and rules» that has a Store, `// Store<Entity> is the store of <entity>.` `func (m *Module) Store<Entity>() crud.Store { return m.store }` (the module's global store for a table the plan lists with `orm.GlobalStore`).
-3. Fill each skeleton with the body of the rule named in «Tables, stores and rules» (and «Read models»), in the forms of «The rule of this plan». An old rule `func(c crud.Caller, tx, rec) error` becomes the rule method with the same body, `c.UserID` becomes `a.UserID`, a nil error becomes `return crud.ApplyAndPublish, nil`, an error `e` becomes `return 0, e`.
-4. Specific to this module: Every rule named above is a rule file. `runOperation(c, tx, op)` switches on `op.Kind` (unknown kind → field error on `kind`) and runs the moved logic with `tx`; `webtyp.com/stock` stays the only place with allocation arithmetic.
-Delete every `Op*` constant, `res*`/`Resource*` variable, every `op*` handler, every `view.MountSave`/`view.MountDelete`/`reg.Operation` call and the `webtyp.com/router`, `webtyp.com/rpc` imports that only they used (`grep -rn "reg.Operation\|view.MountSave\|view.MountDelete\|router.Context\|rpc.WriteError" --include=*.go . | grep -v _test` → empty).
-
-## Stage 4 — readers used by other modules
-
-Signatures of every exported reader stay (other modules and apps call them). Bodies read through `m.store` (`ReadOne`, `ReadAll` with `crud.Query`), never `m.db` directly; a `tenantID` parameter different from the module's tenant answers «not found» (`found=false` / empty, `err=nil`). Keep `ItemExists`, `ItemCard`, `GetItem`, `GetLocation`, `GetBatch`, `ListItems`, `ListLocations`, `ListBatches`, `ListStock`, `ListMovements`, `ListExpiring`, `ListLowStock`, `ReviewExpiring`, `UseInRoom`, `ReceiveStock`, `RegisterEntry`, `RegisterOutput`, `TransferStock` (each builds the `SupplyOperation` record and runs `m.runOperation` inside `m.store.Atomic`).
-
-## Stage 5 — browser side (D15, D16)
-
-- `view.go` (`//go:build browser`): every `view.NewCallerLister(caller, view.Ops{…}, newList)` takes
-  `func() model.TableSlice { return &<Entity>List{} }` and `view.Ops` has no `Allow` (the screen reads `<Entity>List.Allow()`).
-- `module/browser.go`, `module/server.go` (if present): `appkit.ModuleBrowser`/`appkit.BrowserDeps` → `view.ModuleBrowser`/`view.BrowserDeps`.
-- Demo: `seed/demo.go` (`//go:build wasm`) returning `view.Demo{Label, Timezone: "America/Santiago", ActingAs: "u1",
-  Modules: []crud.Module{mod}, Migrations: <the module's ddl.Step list, or nil if it has no migrations>,
-  Screens: func(d view.BrowserDeps) []view.Screen { return ui.Screens(<what today's demo main passes>) }}`, built with
-  `orm.New(mem.New())`, `New(db, Deps{…})` with the same fakes today's demo uses, and `seed.Load` (when the module has one).
-  Delete the old demo: any `web/` demo (`test ! -e web`).
-- `grep -rn "webtyp.com/layout\|appkit.BrowserDeps\|appkit.ModuleBrowser\|router/loopback" .` → empty, `go.mod` included.
-
-## Stage 6 — tests (`tests/`, through `crud.LoopbackActingAs(nil, "u1", mod)`; rows in `docs/TESTS.md`)
-
-Delete tests of removed code. Operations are `router.Operation{Module: ModelName, Entity: "<entity>", Action: model.<Action>}`, never a string; fixtures follow `crud` v0.0.10 (`reg.AddStoredEntity`, `crud.CurrentUser`). Add `TestMount_MatchesDefinition` (`crud.Mount(reg, nil, nil, mod)` returns nil) and one test that an allowed write publishes a `*crud.Change` on `crud.Topic(ModelName, "<entity>", model.<Action>)`. Required:
-
-| Test | Setup → call → expected |
+| Stage | File |
 |---|---|
-| `TestTenant_ReadOtherTenantIsNotFound` | product/item of tenant a read by tenant b → `model.ErrorNotFound` |
-| `TestOperation_ReceiveCreatesBatchAndLevel` | create operation `receive` → one batch, stock level = quantity, one movement; operation `movement_ids` lists it |
-| `TestOperation_OutputFirstExpiryFirst` | two batches expiring day 5 and day 2; output 3 → taken from the day-2 batch first |
-| `TestOperation_OutputNeverNegative` | output more than stock → error, no movement, levels unchanged (atomic) |
-| `TestOperation_TransferMovesBetweenLocations` | transfer 2 from A to B → level A −2, level B +2, two movements |
-| `TestOperation_UnknownKindRejected` | kind "x" → field error on `kind` |
-| `TestMovement_NoWriteOperations` | `<movement>_c` → unknown operation |
-| `TestReadModel_LowStock` | item under its minimum → appears in `LowStock` |
-| `TestDemo_Valid` (`//go:build wasm`) | `seed.Demo()` → no error, `Validate()` nil, at least one screen |
-
-## Stage 7 — translations and documentation (Spanish, veltylabs)
-
-`langc sync .` (zero pending, zero reuse warnings). `README.md` (≤150 lines, 4 mandatory sections; «Sin/Con»: hand-written
-operations vs `Allow` + rules) with the operations table of the mapping above. `docs/ARCHITECTURE.md`: rules vs persistence.
-Translate to Spanish every README, `docs/*`, diagram and code comment still in English; exported symbols without a usage example get one.
+| 1 — `definition.go` | [PLAN_STAGE_1_definition_go.md](PLAN_STAGE_1_definition_go.md) |
+| 2 — `module.go` | [PLAN_STAGE_2_module_go.md](PLAN_STAGE_2_module_go.md) |
+| 3 — generate, then write the rules | [PLAN_STAGE_3_generate_then_write_the_rule.md](PLAN_STAGE_3_generate_then_write_the_rule.md) |
+| 4 — readers used by other modules | [PLAN_STAGE_4_readers_used_by_other_module.md](PLAN_STAGE_4_readers_used_by_other_module.md) |
+| 5 — browser side (D15, D16) | [PLAN_STAGE_5_browser_side.md](PLAN_STAGE_5_browser_side.md) |
+| 6 — tests (`tests/`, through `crud.LoopbackActingAs(nil, "u1", mod)`; rows in `docs/TESTS.md`) | [PLAN_STAGE_6_tests.md](PLAN_STAGE_6_tests.md) |
+| 7 — translations and documentation (Spanish, veltylabs) | [PLAN_STAGE_7_translations_and_documentati.md](PLAN_STAGE_7_translations_and_documentati.md) |
 
 ## Delivery check
 
